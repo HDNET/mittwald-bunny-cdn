@@ -1,0 +1,68 @@
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+    # @mittwald/flow-* ships daily alpha bumps (0.2.0-alpha.807 …). Without
+    # this ignore the weekly bundle still dominates the PR queue. Minor and
+    # major upgrades always come through so we notice breaking changes.
+    ignore:
+      - dependency-name: "@mittwald/flow-remote-react-components"
+        update-types: [version-update:semver-patch]
+      - dependency-name: "@mittwald/flow-react-components"
+        update-types: [version-update:semver-patch]
+      - dependency-name: "@mittwald/mstudio-ext-react-components"
+        update-types: [version-update:semver-patch]
+      - dependency-name: "@mittwald/ext-bridge"
+        update-types: [version-update:semver-patch]
+    groups:
+      mittwald:
+        patterns:
+          - "@mittwald/*"
+          - "@weissaufschwarz/*"
+      tanstack:
+        patterns:
+          - "@tanstack/*"
+      types:
+        patterns:
+          - "@types/*"
+      testing:
+        patterns:
+          - vitest
+          - "@vitest/*"
+          - fast-check
+      linting:
+        patterns:
+          - "@biomejs/*"
+          - "@commitlint/*"
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - ci
+      - dependencies
+
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: monthly
+    labels:
+      - docker
+      - dependencies
+    # We intentionally pin to Node 24-alpine for parity with local dev
+    # (.node-version) and the project's engines field. Skip major bumps;
+    # minor/patch still flow so security fixes for the 24.x line are not
+    # blocked.
+    ignore:
+      - dependency-name: "node"
+        update-types: [version-update:semver-major]

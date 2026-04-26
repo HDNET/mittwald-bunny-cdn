@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, integration]
+  push:
+    branches: [main, integration]
+  workflow_call:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Only cancel in-progress runs on PRs. For main/integration every commit
+  # deserves its own full pipeline so a failing intermediate revision is not
+  # silently hidden by a newer one.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+# Each job runs `npm ci` separately. With `cache: npm` from setup-node the
+# install drops from ~31s (uncached) to ~5–10s (cache hit), so the parallel
+# overhead is small compared to the wall-clock saving from running lint /
+# typecheck / test / build concurrently instead of sequentially.
+
+jobs:
+  lint:
+    name: Lint & Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run code-check
+      - name: Audit
+        # Report vulnerabilities but do not block merges — a transitive
+        # upstream CVE would otherwise halt unrelated PRs. The GitHub
+        # step-summary still flags any finding for triage.
+        continue-on-error: true
+        run: npm audit --audit-level=high --omit=dev
+
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      # `npm run typecheck` first generates src/routeTree.gen.ts via the
+      # tanstack-router CLI — that file is gitignored, so without the
+      # pre-step tsc fails on the missing module + the resulting unknown
+      # createFileRoute path types.
+      - run: npm run typecheck
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+      - run: npm run build

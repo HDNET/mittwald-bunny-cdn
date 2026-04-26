@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.output/
+coverage/
+.serena/
+.claude/
+.kiro/
+data/*.db
+data/*.db-wal
+data/*.db-shm
+.env
+*.log
+src/routeTree.gen.ts
+.DS_Store

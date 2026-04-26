@@ -1,0 +1,1 @@
+ALTER TABLE `pull_zones` ADD `custom_hostname` text;

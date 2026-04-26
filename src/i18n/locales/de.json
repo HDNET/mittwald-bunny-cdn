@@ -1,0 +1,469 @@
+{
+  "app": {
+    "title": "bunny.net Extension",
+    "extensionPaused": "Diese Extension ist in mStudio pausiert. Änderungen werden blockiert, bis die Instance dort wieder aktiviert wurde. Bereits ausgelieferte CDN-Inhalte sind davon nicht betroffen."
+  },
+  "common": {
+    "errors": {
+      "heading": "Fehler",
+      "retry": "Erneut versuchen",
+      "unknownLoadError": "Unbekannter Fehler beim Laden."
+    },
+    "actions": {
+      "back": "Zurück",
+      "next": "Weiter",
+      "backToStart": "Zurück zum Anfang",
+      "cancel": "Abbrechen",
+      "save": "Speichern"
+    }
+  },
+  "roles": {
+    "owner": "Inhaber:in",
+    "emailadmin": "E-Mail-Administrator:in",
+    "external": "Externe:r",
+    "notset": "Keine Rolle"
+  },
+  "errors": {
+    "fallback": "Ein unerwarteter Fehler ist aufgetreten. Bitte lade die Seite neu oder versuche es später erneut.",
+    "EMPTY_FIELD": "{{field}} darf nicht leer sein. Bitte fülle das Feld aus.",
+    "INVALID_URL": "{{field}} ist keine gültige URL. Bitte gib eine vollständige URL mit https:// ein.",
+    "INVALID_CDN_MODE": "CDN-Modus muss 'asset' oder 'full-site' sein.",
+    "INSTANCE_NOT_FOUND": "Extension-Instanz nicht gefunden.",
+    "MISSING_SCOPE": "Die Berechtigung „{{scope}}\" fehlt. Bitte öffne die Extension in mStudio und klicke auf „Berechtigungen erneut freigeben\".",
+    "INSTANCE_PAUSED": "Die Extension ist in mStudio pausiert. Bitte öffne mStudio und aktiviere die Extension-Instanz, um fortzufahren.",
+    "MISSING_OWNER_ROLE": "Für diese Aktion werden Projekt-Owner-Rechte benötigt. Deine aktuelle Rolle ist „{{role}}\" — bitte den Projekt-Owner, das Setup selbst durchzuführen oder dir in den mittwald-Projekteinstellungen unter „Mitglieder\" Owner-Rechte für dieses Projekt zu geben.",
+    "MISSING_OWNER_ROLE_UNKNOWN": "Für diese Aktion werden Projekt-Owner-Rechte benötigt. Deine Rolle konnte nicht ermittelt werden — bitte den Projekt-Owner, das Setup selbst durchzuführen oder dir in den mittwald-Projekteinstellungen unter „Mitglieder\" Owner-Rechte für dieses Projekt zu geben.",
+    "NO_API_KEY": "Kein API Key hinterlegt. Bitte trage deinen bunny.net API Key in Schritt 1 ein.",
+    "INVALID_API_KEY": "Der API Key wurde von bunny.net abgelehnt. Bitte prüfe ihn unter dash.bunny.net/account/api-key oder generiere einen neuen.",
+    "PULL_ZONE_NOT_FOUND": "Keine Pull Zone vorhanden. Bitte richte zuerst eine Pull Zone über den Setup-Wizard ein.",
+    "CUSTOM_HOSTNAME_ASSET_ONLY": "Custom Hostname lässt sich nur im Asset-Modus umschalten; Full-Site-Pull-Zones haben konzeptbedingt immer einen.",
+    "BUNNY_TIMEOUT": "bunny.net antwortet nicht rechtzeitig. Bitte versuche es in einigen Minuten erneut.",
+    "BUNNY_UNREACHABLE": "bunny.net ist aktuell nicht erreichbar. Bitte prüfe status.bunny.net und versuche es später erneut.",
+    "BUNNY_UNAUTHORIZED": "Der API Key wurde von bunny.net abgelehnt. Bitte prüfe ihn unter dash.bunny.net/account/api-key oder generiere einen neuen.",
+    "BUNNY_NOT_FOUND": "Die angeforderte Ressource existiert nicht mehr bei bunny.net. Bitte lade die Seite neu.",
+    "BUNNY_API_ERROR": "bunny.net meldet einen Fehler (HTTP {{status}}). Bitte versuche es erneut oder prüfe status.bunny.net.",
+    "PULL_ZONE_DELETE_FAILED": "Pull Zone konnte nicht gelöscht werden (HTTP {{status}}). Bitte versuche es erneut oder lösche sie manuell im bunny.net Dashboard.",
+    "HOSTNAME_REMOVE_FAILED": "Hostname konnte nicht entfernt werden (HTTP {{status}}). Bitte versuche es erneut oder entferne ihn manuell im bunny.net Dashboard.",
+    "MITTWALD_API_ERROR": "mittwald meldet einen Fehler (HTTP {{status}}). Bitte versuche es erneut oder prüfe den Status in mStudio.",
+    "PULL_ZONE_RESPONSE_INCOMPLETE": "Die Pull-Zone-Daten konnten nicht vollständig geladen werden. Bitte lade die Seite neu."
+  },
+  "wizard": {
+    "title": "CDN einrichten — Schritt {{current}} von {{total}}",
+    "progress": {
+      "apiKey": "API Key",
+      "domain": "Domain",
+      "mode": "CDN-Modus",
+      "create": "Erstellen",
+      "done": "Fertig",
+      "aria": "Schritt {{current}} von {{total}}"
+    },
+    "errors": {
+      "saveFailed": "Fehler beim Speichern",
+      "createFailed": "Fehler beim Erstellen",
+      "fullSiteOriginMissing": "Full-Site-CDN benötigt eine interne mittwald-Projekt-URL als Origin. Bitte kontaktiere den mittwald-Support unter support@mittwald.de."
+    },
+    "step0": {
+      "heading": "bunny.net API Key hinterlegen",
+      "descriptionPrefix": "Deinen API Key findest du in deinem ",
+      "profileLink": "bunny.net-Profil",
+      "descriptionSuffix": ". Der Schlüssel wird verschlüsselt in der Extension gespeichert und nie im Klartext übertragen.",
+      "dpaHint": "Für DSGVO-konformen Betrieb solltest du das Data Processing Agreement (DPA) bei bunny.net akzeptieren:",
+      "dpaLink": "DPA bei bunny.net öffnen",
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "Dein bunny.net API Key",
+        "invalid": "Das sieht nicht nach einem gültigen bunny.net API Key aus. Erwartet werden mindestens 36 Zeichen aus Buchstaben, Ziffern und Bindestrichen."
+      },
+      "accordion": {
+        "heading": "Warum bunny.net für mein mittwald-Projekt?",
+        "intro": "Ein CDN liefert Bilder, CSS und JavaScript — oder optional die gesamte Website — über ein globales Netzwerk aus. Das Ergebnis: schnellere Ladezeiten und weniger Last auf deinem Server.",
+        "boxes": {
+          "eu": {
+            "heading": "EU-Betreiber, DSGVO-konform",
+            "text": "bunny.net hat seinen Sitz in Slowenien (EU) — kein US-Cloud-Act-Risiko. Mit der „Nur EU-Standorte\"-Option bleiben Besucher-Daten end-to-end in europäischer Infrastruktur."
+          },
+          "global": {
+            "heading": "Globales Netzwerk",
+            "text": "Über 120 Standorte weltweit für schnelle Auslieferung an Besucher überall."
+          },
+          "typo3": {
+            "heading": "TYPO3-ready",
+            "text": "Eingeloggte Frontend-Benutzer sehen immer aktuelle, ungecachte Inhalte."
+          },
+          "price": {
+            "heading": "Keine Grundgebühr",
+            "text": "Du zahlst nur den tatsächlichen Traffic, ab ca. 1 €/Monat für kleinere Seiten."
+          }
+        }
+      }
+    },
+    "step1": {
+      "heading": "Domain auswählen",
+      "description": "Wähle die Domain, für die du das CDN einrichten möchtest.",
+      "domainLabel": "Domain",
+      "apiKeyInUse": "Verwendeter API-Key:",
+      "empty": "In diesem mittwald-Projekt wurden keine Domains gefunden. Lege zunächst eine Domain in den mittwald-Projekteinstellungen unter „Domains → Domain verbinden\" an und komm dann hierher zurück.",
+      "retryApiKey": "API-Key ändern"
+    },
+    "step2": {
+      "heading": "Wie soll das CDN eingesetzt werden?",
+      "description": "Wähle, ob nur statische Dateien oder deine gesamte Website über bunny.net ausgeliefert werden sollen.",
+      "assetCdn": {
+        "heading": "Asset-CDN",
+        "badge": "Empfohlen",
+        "description": "Statische Dateien über CDN-Subdomain (z.B. <1>cdn.{{hostname}}</1>). Hauptdomain bleibt bei mittwald.",
+        "benefit": "Kein Risiko, einfache Einrichtung, sofort rückgängig machbar",
+        "downside": "Nur statische Dateien werden beschleunigt"
+      },
+      "fullSiteCdn": {
+        "heading": "Full-Site-CDN",
+        "badge": "Maximale Performance",
+        "description": "Gesamte Website über bunny.net. <1>www.{{hostname}}</1> zeigt auf das CDN.",
+        "benefit": "Alle Seiten gecacht, automatisches SSL, TYPO3-kompatibel",
+        "downside": "DNS-Änderung nötig, Redirect von Naked Domain erforderlich",
+        "unavailable": "Full-Site-CDN benötigt eine interne mittwald Projekt-URL als Origin. Diese konnte aktuell nicht ermittelt werden — bitte Asset-CDN nutzen oder den Support kontaktieren."
+      },
+      "segments": {
+        "asset": "Asset-CDN",
+        "fullSite": "Full-Site-CDN"
+      },
+      "customHostname": {
+        "heading": "Custom Hostname",
+        "description": "Bei aktivem Toggle richten wir <1>{{subdomain}}</1> als deine CDN-Adresse ein: mittwald legt den CNAME an, bunny.net hinterlegt den Hostname und stellt automatisch ein kostenloses SSL-Zertifikat aus. Deaktiviert bekommst du nur die neutrale <1>&lt;pullzone&gt;.b-cdn.net</1>-URL und musst diese manuell in TYPO3 eintragen.",
+        "toggle": "Custom Hostname automatisch einrichten"
+      }
+    },
+    "step3": {
+      "heading": "Alles bereit!",
+      "description": "Prüfe deine Auswahl und klicke auf „Jetzt einrichten\". bunny.net erstellt dann eine Pull Zone für deine Website. Anschließend erhältst du eine Schritt-für-Schritt-Anleitung.",
+      "configHeading": "Deine Konfiguration",
+      "labels": {
+        "domain": "Domain",
+        "cdnMode": "CDN-Modus",
+        "cdnSubdomain": "CDN-Subdomain",
+        "cdnHostname": "CDN-Hostname",
+        "origin": "Origin-Server",
+        "pullZoneOnly": "nur <pullzone>.b-cdn.net",
+        "internalOrigin": "mittwald-intern"
+      },
+      "modeBadges": {
+        "asset": "Asset-CDN",
+        "fullSite": "Full-Site-CDN"
+      },
+      "nextStepsHeading": "Was passiert als nächstes?",
+      "nextSteps": {
+        "asset": {
+          "withCustomHostname": {
+            "step1": "Eine Pull Zone wird bei bunny.net für deine statischen Dateien erstellt.",
+            "step2": "<1>cdn.{{hostname}}</1> wird bei bunny.net als Hostname hinterlegt und ein kostenloses SSL-Zertifikat ausgestellt.",
+            "step3": "Der DNS-Eintrag <1>cdn.{{hostname}}</1> wird automatisch bei mittwald angelegt.",
+            "step4": "Du landest im Dashboard mit der CDN-Domain, Konfigurations-Snippets (u.a. für TYPO3) und den Traffic-Auswertungen."
+          },
+          "withoutCustomHostname": {
+            "step1": "Eine Pull Zone wird bei bunny.net für deine statischen Dateien erstellt.",
+            "step2": "Du bekommst die neutrale <1>&lt;pullzone&gt;.b-cdn.net</1>-URL. Custom Hostname (<1>cdn.{{hostname}}</1>) kannst du später im Dashboard aktivieren.",
+            "step3": "Du landest im Dashboard mit der CDN-Domain und den Konfigurations-Snippets für dein TYPO3-Setup."
+          }
+        },
+        "fullSite": {
+          "step1": "Eine Pull Zone mit SSL und TYPO3 Edge Rules wird erstellt.",
+          "step2": "Der DNS-Eintrag <1>www.{{hostname}}</1> wird automatisch auf bunny.net umgestellt.",
+          "step3": "Du richtest einen Redirect ein: <1>{{hostname}}</1> → <1>www.{{hostname}}</1>"
+        }
+      },
+      "cta": "Jetzt einrichten",
+      "creating": "Pull Zone wird erstellt..."
+    },
+    "step4": {
+      "heading": "Pull Zone erfolgreich erstellt",
+      "intro": "Folge den Schritten unten, um die Einrichtung abzuschließen. Anschließend geht's ins Dashboard, wo du Traffic, Einstellungen und den Cache verwalten kannst.",
+      "toDashboard": "Zum Dashboard",
+      "statusBadge": {
+        "ok": "Erledigt",
+        "pending": "Aktion nötig",
+        "info": "Info"
+      }
+    },
+    "permissionBanner": {
+      "withRole": "Für die CDN-Einrichtung werden Projekt-Owner-Rechte benötigt. Deine aktuelle Rolle ist „{{role}}\". Bitte kontaktiere eine:n Administrator:in deines Projekts, um die Einrichtung abzuschließen.",
+      "unknownRole": "Für die CDN-Einrichtung werden Projekt-Owner-Rechte benötigt. Deine Rolle konnte nicht ermittelt werden. Bitte kontaktiere eine:n Administrator:in deines Projekts, um die Einrichtung abzuschließen."
+    }
+  },
+  "configHints": {
+    "asset": {
+      "noCustom": {
+        "dns": {
+          "title": "Kein Custom Hostname eingerichtet",
+          "description": "Du hast die Custom-Hostname-Einrichtung übersprungen. Nutze die bunny.net-URL {{cdnDomain}} direkt in deinem Setup. Du kannst den Custom Hostname später im Dashboard nachziehen."
+        }
+      },
+      "withCustom": {
+        "dnsOk": {
+          "title": "DNS automatisch konfiguriert",
+          "description": "Der CNAME-Eintrag {{subdomain}} → {{cdnDomain}} wurde automatisch bei mittwald angelegt. Die DNS-Propagation kann einige Minuten dauern."
+        },
+        "dnsPending": {
+          "title": "DNS-Eintrag manuell anlegen",
+          "description": "Der DNS-Eintrag konnte nicht automatisch angelegt werden. Bitte erstelle ihn manuell:"
+        }
+      },
+      "typo3": {
+        "title": "TYPO3 TypoScript Konfiguration",
+        "description": "Füge folgendes TypoScript in dein Setup ein, um Assets über das CDN auszuliefern:"
+      }
+    },
+    "fullSite": {
+      "dnsOk": {
+        "title": "DNS automatisch konfiguriert",
+        "description": "Der CNAME-Eintrag {{hostname}} → {{cdnDomain}} wurde automatisch bei mittwald angelegt. Die DNS-Propagation kann einige Minuten dauern."
+      },
+      "dnsPending": {
+        "title": "DNS-Eintrag manuell anlegen",
+        "description": "Der DNS-Eintrag konnte nicht automatisch angelegt werden. Bitte erstelle ihn manuell:"
+      },
+      "ssl": {
+        "title": "SSL-Zertifikat",
+        "description": "Ein kostenloses Let's Encrypt Zertifikat wird automatisch für {{hostname}} ausgestellt. Die Ausstellung kann bis zu 15 Minuten dauern."
+      },
+      "cache": {
+        "title": "Cache-Verhalten",
+        "description": "Eingeloggte TYPO3-Frontend-Benutzer werden automatisch vom Cache ausgeschlossen. Für Änderungen am Inhalt nutze den Cache-Purge-Button im Dashboard."
+      },
+      "redirect": {
+        "title": "Redirect einrichten",
+        "description": "Stelle sicher, dass {{nakedDomain}} per 301-Redirect auf {{hostname}} weiterleitet. mittwald erledigt das in der Regel automatisch über die Domain-Einstellungen."
+      }
+    }
+  },
+  "dashboard": {
+    "title": "CDN Dashboard",
+    "noPullZone": "Keine Pull Zone vorhanden.",
+    "zonePausedBanner": "Die Pull Zone ist aktuell pausiert. Inhalte werden nicht über das CDN ausgeliefert — Besucher landen direkt auf dem Origin-Server.",
+    "actions": {
+      "changeApiKey": "API-Key ändern",
+      "changeApiKeyDescription": "Gib deinen neuen bunny.net API-Key ein. Den Key findest du unter <1>dash.bunny.net/account/api-key</1>.",
+      "changeApiKeyLabel": "Neuer API-Key",
+      "changeApiKeyPlaceholder": "Neuen Key eingeben (ersetzt …{{last4}})",
+      "changeApiKeyHintHeading": "Hinweis",
+      "changeApiKeyHint": "Der gespeicherte Key wird ersetzt. bunny.net prüft den neuen Key vor dem Speichern — ist er ungültig, bleibt der alte Key aktiv.",
+      "changeApiKeySuccess": "API-Key wurde aktualisiert."
+    },
+    "tabs": {
+      "analytics": "Dashboard",
+      "settings": "Einstellungen",
+      "integration": "Integration",
+      "account": "Account",
+      "about": "Über"
+    },
+    "settingsTab": {
+      "sections": {
+        "delivery": "Auslieferung",
+        "optimization": "Optimierung",
+        "access": "Zugriff"
+      },
+      "serving": {
+        "heading": "Traffic über das CDN ausliefern",
+        "description": "Wenn deaktiviert, gehen Anfragen direkt an deinen mittwald-Server vorbei am CDN. Die Konfiguration bleibt erhalten — du kannst jederzeit zurückwechseln.",
+        "toggle": "Aktiv (Traffic läuft über bunny.net)"
+      },
+      "purgeCache": {
+        "heading": "Cache leeren",
+        "description": "Verwirft alle gecachten Inhalte am bunny.net-Edge. Sinnvoll nach einem TYPO3-Deployment, damit Besucher sofort die neue Version sehen.",
+        "button": "Cache jetzt leeren",
+        "purging": "Cache wird geleert…",
+        "success": "Cache erfolgreich geleert."
+      },
+      "cacheTtl": {
+        "heading": "Cache-Lebensdauer",
+        "description": "Wie lange bunny.net Inhalte zwischenspeichert, bevor sie neu vom Origin geladen werden. „Origin\" bedeutet: den Cache-Control-Header des mittwald-Servers respektieren.",
+        "edgeLabel": "Edge-Cache (bunny.net)",
+        "browserLabel": "Browser-Cache (Besucher-Browser)"
+      },
+      "smartCache": {
+        "heading": "Smart Cache",
+        "description": "bunny.net wählt die Cache-Lebensdauer automatisch nach Content-Typ: kurz für HTML, deutlich länger für statische Assets (CSS, JS, Bilder, Fonts). Cache-Control-Header vom Origin werden dabei überschrieben.",
+        "recommendation": "Sinnvoll, wenn dein Origin keine präzisen Cache-Header schickt. Wenn TYPO3 spezifische Cache-Header setzt, lass es deaktiviert und nutze oben Edge-Cache „Origin\".",
+        "docsLink": "Smart Cache in der bunny.net-Doku",
+        "helpHeading": "Wie funktioniert Smart Cache?",
+        "helpText": "Smart Cache klassifiziert Antworten am bunny.net-Edge nach Content-Typ. HTML/dynamische Inhalte bekommen einen kurzen TTL (Standard ca. 15 Minuten), statische Assets einen langen (bis zu einem Jahr). Beide TTLs überschreiben den Cache-Control-Header des Origin-Servers.",
+        "toggle": "Smart Cache aktivieren"
+      },
+      "cachePresets": {
+        "origin": "Origin",
+        "1h": "1 Stunde",
+        "1d": "1 Tag",
+        "1w": "1 Woche",
+        "30d": "30 Tage"
+      },
+      "imageOptimizer": {
+        "heading": "Bildoptimierung",
+        "badge": "Kostenpflichtiges Add-on",
+        "description": "bunny.net konvertiert Bilder on-the-fly in moderne Formate (WebP, AVIF). Spart bis zu 70% Bandbreite bei gleicher Bildqualität.",
+        "pricingPrefix": "Achtung: Wird bei Aktivierung unmittelbar pro Pull Zone abgerechnet. Aktuelle Konditionen siehe ",
+        "pricingLink": "bunny.net/pricing",
+        "pricingSuffix": ".",
+        "toggle": "Image Optimizer (inkl. WebP & AVIF)"
+      },
+      "minify": {
+        "heading": "CSS & JavaScript minifizieren",
+        "description": "Entfernt Whitespace und Kommentare aus deinen Assets. Nur aktivieren wenn TYPO3 sie nicht bereits minifiziert.",
+        "css": "CSS minifizieren",
+        "js": "JavaScript minifizieren"
+      },
+      "cdnRegions": {
+        "heading": "CDN-Regionen",
+        "description": "Beschränke die Auslieferung auf europäische Server für maximale DSGVO-Konformität. Deaktiviert alle PoPs außerhalb der EU.",
+        "toggle": "Nur EU-Standorte",
+        "dpaHint": "Für vollständige DSGVO-Konformität sollte zusätzlich das Data Processing Agreement (DPA) bei bunny.net akzeptiert sein.",
+        "dpaLink": "DPA bei bunny.net öffnen"
+      },
+      "hotlink": {
+        "heading": "Hotlink-Schutz",
+        "description": "Verhindert, dass fremde Websites direkt auf deine CDN-Ressourcen verlinken und deine Bandbreite verbrauchen. Nur Anfragen von den hier erlaubten Domains werden ausgeliefert.",
+        "toggle": "Hotlink-Schutz aktivieren",
+        "referrersLabel": "Erlaubte Referrer",
+        "referrersHelp": "Eine Domain pro Zeile. z.B. example.com, www.example.com",
+        "emptyWarning": "Ohne mindestens einen erlaubten Referrer würden alle Anfragen blockiert. Bitte trage mindestens eine Domain ein.",
+        "save": "Hotlink-Einstellungen speichern"
+      }
+    },
+    "infoCard": {
+      "heading": "Pull Zone",
+      "zoneActive": "Zone aktiv",
+      "zonePaused": "Zone pausiert",
+      "ssl": {
+        "ok": "SSL gültig",
+        "pending": "SSL wird ausgestellt",
+        "missing": "SSL fehlt"
+      },
+      "dns": {
+        "ok": "DNS ok",
+        "pending": "DNS wird propagiert",
+        "missing": "DNS fehlt"
+      },
+      "origin": {
+        "ok": "Origin erreichbar",
+        "slow": "Origin langsam",
+        "down": "Origin nicht erreichbar",
+        "unknown": "Origin unbekannt"
+      },
+      "labels": {
+        "cdnDomain": "CDN-Domain",
+        "origin": "Origin",
+        "mode": "Modus"
+      },
+      "modeBadges": {
+        "asset": "Asset-CDN",
+        "fullSite": "Full-Site-CDN"
+      },
+      "euOnlyBadge": "Nur EU"
+    },
+    "heroKpis": {
+      "heading": "Diesen Monat",
+      "labels": {
+        "requests": "Requests",
+        "traffic": "Traffic",
+        "hitRate": "Cache Hit Rate",
+        "costs": "Kosten",
+        "balance": "bunny.net-Guthaben",
+        "accountTraffic": "Traffic gesamt (Konto)"
+      }
+    },
+    "analyticsTab": {
+      "paused": {
+        "heading": "Zone pausiert",
+        "text": "Die Pull Zone ist aktuell deaktiviert — es werden keine neuen Analytics-Daten erfasst. Den Schalter zum Reaktivieren findest du oben in der Pull-Zone-Karte."
+      },
+      "empty": {
+        "heading": "Noch keine Daten",
+        "text": "Sobald der erste Traffic über dein CDN läuft, erscheinen hier Charts und Kennzahlen."
+      },
+      "trafficHeading": "Traffic-Verlauf ({{unit}})",
+      "requestsHeading": "Requests pro Tag",
+      "trafficSummary": "Gesamt: {{total}} über {{days}} Tage.",
+      "requestsSummary": "Gesamt: {{total}} Requests über {{days}} Tage.",
+      "cachePerformance": "Cache-Performance",
+      "cacheHit": "Cache Hit",
+      "cacheMiss": "Cache Miss",
+      "trafficFromCdn": "Traffic vom CDN bedient",
+      "avgOriginResponse": "Ø Origin-Antwortzeit bei Cache-Miss",
+      "cachePerformanceExplainer": "Der obere Wert ist der Anteil des Traffics, der nicht deinen mittwald-Server belastet hat. Die Origin-Antwortzeit gilt nur bei Cache-Miss — je höher die Hit-Rate, desto seltener wird sie überhaupt spürbar."
+    },
+    "dangerZone": {
+      "label": "CDN-Setup entfernen",
+      "description": "Die Pull Zone, der DNS-Eintrag (CNAME) und alle CDN-Einstellungen werden unwiderruflich gelöscht. Deine Domain zeigt danach wieder direkt auf den mittwald-Server.",
+      "deleteCta": "CDN-Setup entfernen",
+      "confirmWarning": "Bist du sicher? Die Pull Zone bei bunny.net und der DNS-Eintrag bei mittwald werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "deleting": "Wird gelöscht…",
+      "deleteFinal": "Endgültig löschen"
+    },
+    "integrationTab": {
+      "heading": "Integration",
+      "description": "CMS- und Shop-spezifische Konfigurationshinweise für dein CDN. Jede Integration enthält die passenden Caching-Regeln, Snippets und Empfehlungen, damit dein System optimal mit bunny.net zusammenarbeitet. Aktuell wird TYPO3 unterstützt — weitere Integrationen (z.B. Shopware, WordPress) folgen.",
+      "customHostname": {
+        "heading": "Custom Hostname",
+        "fullSiteOnly": "Full-Site-CDN nutzt <1>{{hostname}}</1> als CDN-Adresse. Dieser Hostname ist fester Bestandteil des Full-Site-Modus und kann nicht abgeschaltet werden.",
+        "enabledText": "Deine CDN-Adresse <1>{{hostname}}</1> ist bei bunny.net registriert und hat ein kostenloses SSL-Zertifikat. Deaktivieren entfernt den Hostname und den mittwald-CNAME wieder — Besucher müssen dann auf <1>{{cdnDomain}}</1> umgezogen werden.",
+        "disabledText": "Aktivieren richtet <1>{{hostname}}</1> als deine CDN-Adresse ein: mittwald legt den CNAME an, bunny.net hinterlegt den Hostname und stellt ein SSL-Zertifikat aus. Ohne Custom Hostname wird Traffic über <1>{{cdnDomain}}</1> ausgeliefert.",
+        "toggle": "Custom Hostname aktiv",
+        "busy": "Änderung wird angewendet — bunny.net, mittwald-DNS und Datenbank werden synchronisiert…",
+        "openLink": "{{hostname}} im Browser öffnen",
+        "error": "Custom-Hostname-Umschaltung fehlgeschlagen",
+        "confirmDisableHeading": "Custom Hostname deaktivieren?",
+        "confirmDisable": "Custom Hostname wirklich deaktivieren? Bestehende Besucher bekommen DNS-Fehler, bis sie auf die neue .b-cdn.net-URL wechseln.",
+        "confirmDisableCta": "Hostname deaktivieren"
+      }
+    },
+    "typo3Integration": {
+      "asset": {
+        "heading": "CDN-Domain in TYPO3 einrichten",
+        "description": "Damit TYPO3 statische Dateien über {{cdnDomain}} ausliefert, füge folgendes TypoScript in dein Setup ein:"
+      },
+      "fullSite": {
+        "heading": "Full-Site-CDN Konfiguration",
+        "badge": "Edge-Rule „fe_typo_user\" aktiv",
+        "description": "Bei Full-Site-CDN läuft der gesamte Traffic über bunny.net. Eingeloggte Frontend-Benutzer umgehen dank Edge-Rule automatisch den Cache. Aktiviere Cache-Header damit bunny.net optimal cachen kann:"
+      },
+      "snippet": {
+        "asset": "# TYPO3 TypoScript: Statische Dateien über CDN ausliefern\npage.headerData.10 = TEXT\npage.headerData.10.value = <base href=\"https://{{cdnDomain}}/\">\n\n# Oder per config:\nconfig.absRefPrefix = https://{{cdnDomain}}/",
+        "fullSite": "# Full-Site-CDN: Keine TypoScript-Änderung nötig.\n# Deine Domain zeigt direkt auf bunny.net.\n# Cache-Header aktivieren:\nconfig.sendCacheHeaders = 1"
+      },
+      "tipsHeading": "Weitere Tipps",
+      "tips": {
+        "cacheHeaders": {
+          "heading": "Cache-Header aktivieren",
+          "description": "Damit bunny.net weiß wie lange Inhalte gecacht werden dürfen, aktiviere Cache-Header in TYPO3:"
+        },
+        "imageOpt": {
+          "heading": "Bildoptimierung",
+          "description": "bunny.net Optimizer konvertiert Bilder automatisch in WebP und minifiziert CSS/JS. Aktivierung im Tab „Einstellungen\" oder direkt im bunny.net Dashboard.",
+          "link": "Optimizer öffnen"
+        },
+        "loggedIn": {
+          "heading": "Eingeloggte Benutzer",
+          "fullSite": "Eine Edge Rule ist aktiv: Wenn das Cookie „fe_typo_user\" gesetzt ist, wird der Cache umgangen. Eingeloggte Frontend-Benutzer sehen immer aktuelle Inhalte.",
+          "asset": "Im Asset-CDN werden nur statische Dateien (Bilder, CSS, JS) gecacht. Dynamische Seiten kommen direkt von deinem mittwald Server — eingeloggte Benutzer sind nicht betroffen."
+        },
+        "deployment": {
+          "heading": "Nach dem Deployment",
+          "description": "Leere den CDN-Cache nach jedem TYPO3-Deployment, damit Änderungen sofort sichtbar sind. Du kannst das über das Aktionen-Menü (⋯) oben rechts tun."
+        }
+      }
+    },
+    "aboutTab": {
+      "extension": {
+        "heading": "bunny.net Extension für mittwald",
+        "versionLabel": "Version",
+        "developedByLabel": "Entwickelt von"
+      },
+      "support": {
+        "heading": "Support & Feedback",
+        "text": "Fragen, Probleme oder Feature-Wünsche? Wir freuen uns über deinen Kontakt — auch Pull Requests sind willkommen.",
+        "emailLabel": "E-Mail",
+        "issuesLabel": "Bugs & Features"
+      },
+      "disclaimerHeading": "Haftungsausschluss",
+      "disclaimer": "Diese Extension ist nicht offiziell mit bunny.net verbunden. Der Name „bunny.net\" und das bunny.net-Logo sind Eigentum der BunnyWay d.o.o. Die Verwendung erfolgt ausschließlich zu Identifikationszwecken."
+    }
+  }
+}

@@ -1,0 +1,12 @@
+FROM node:24-alpine
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps && chown -R node:node /app
+
+# Run as unprivileged user to avoid host filesystem writes as root
+USER node
+
+EXPOSE 3000
+
+CMD ["npm", "run", "dev"]

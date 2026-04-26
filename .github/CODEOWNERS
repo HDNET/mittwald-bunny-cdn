@@ -1,0 +1,19 @@
+# CODEOWNERS — review requirements for security-sensitive code paths.
+#
+# TODO(carsten): replace `@TODO-OWNER` with the actual GitHub user/team handle
+# (e.g. `@hdnet/extensions` or `@carstenhensiek`). GitHub silently ignores
+# unknown handles, so this file is inert until that's done.
+
+# Default owner for everything
+*                                            @TODO-OWNER
+
+# Security-critical paths — re-review required even on small changes.
+/src/server/crypto.ts                        @TODO-OWNER
+/src/server/webhooks/                        @TODO-OWNER
+/src/middleware/auth.ts                      @TODO-OWNER
+/src/server/routes/api/webhooks/             @TODO-OWNER
+/SECURITY.md                                 @TODO-OWNER
+/deploy/stack.yaml                           @TODO-OWNER
+/.github/workflows/                          @TODO-OWNER
+/package.json                                @TODO-OWNER
+/package-lock.json                           @TODO-OWNER

@@ -1,0 +1,43 @@
+services:
+  app:
+    image: '{{ .Env.IMAGE_TAG }}'
+    description: 'bunny.net Extension'
+    ports:
+      - '3000/tcp'
+    volumes:
+      - app-data:/app/data
+    # Single replica is load-bearing, not a cost choice: SQLite is a
+    # single-writer engine, the in-memory rate limit and webhook-dedup sweeper
+    # assume one process, and the on-disk volume cannot safely be shared. A
+    # horizontal-scale change has to migrate to PostgreSQL first.
+    #
+    # Memory ceiling sized for: V8 heap + better-sqlite3 native module +
+    # scrypt KEK derivation peak (~256 MB for ~25ms at boot — see
+    # SCRYPT_MAXMEM in src/server/crypto.ts).
+    deploy:
+      replicas: 1
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
+      interval: 30s
+      timeout: 5s
+      # 30s buffer absorbs: cold container start + first SQLite migration
+      # + WAL replay against a multi-MB existing volume on restart.
+      start_period: 30s
+      retries: 3
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: /app/data/sqlite.db
+      EXTENSION_ID: '{{ .Env.EXTENSION_ID }}'
+      EXTENSION_SECRET: '{{ .Env.EXTENSION_SECRET }}'
+      ENCRYPTION_MASTER_PASSWORD: '{{ .Env.ENCRYPTION_MASTER_PASSWORD }}'
+      ENCRYPTION_SALT: '{{ .Env.ENCRYPTION_SALT }}'
+
+volumes:
+  app-data: {}

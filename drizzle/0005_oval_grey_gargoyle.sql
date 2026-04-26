@@ -1,0 +1,1 @@
+ALTER TABLE `extension_instances` DROP COLUMN `secret`;

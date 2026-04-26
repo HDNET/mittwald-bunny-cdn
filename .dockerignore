@@ -1,0 +1,12 @@
+node_modules
+dist
+.output
+data
+.env
+*.log
+.git
+.github
+.kiro
+.serena
+tests
+biome.json

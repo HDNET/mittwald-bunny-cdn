@@ -1,0 +1,136 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [main]
+    # Tag pushes (e.g. v1.2.3) build and archive a versioned image to
+    # the registry for rollback/audit. The actual mStudio deploy only
+    # fires for main-branch pushes — see `deploy.if` below.
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  # Never cancel an in-flight deploy — half-finished mStudio updates
+  # are worse than a few seconds of queue wait.
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+    permissions:
+      contents: read
+
+  build:
+    needs: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.value }}
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@4d04d5d9486b7bd6fa91e7baf45bbb4f8b9deedd # v4.0.0
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@4907a6ddec9925e35a0a9e82d7399ccc52663121 # v4.1.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive image tags
+        id: image_tag
+        run: |
+          # GHCR rejects uppercase repository segments, but ${{ github.repository }}
+          # preserves the org's casing (e.g. HDNET/...). Lowercase the whole path
+          # so any owner spelling resolves to a valid registry name.
+          IMAGE_NAME_LC=$(echo "$IMAGE_NAME" | tr '[:upper:]' '[:lower:]')
+          # Primary tag: immutable SHA for exact rollback anchors.
+          PRIMARY="${REGISTRY}/${IMAGE_NAME_LC}:${GITHUB_SHA}"
+          TAGS="$PRIMARY"
+          # On main-branch pushes, also publish :latest so operators can pull
+          # the current prod image without knowing the SHA.
+          if [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            TAGS="${TAGS}\n${REGISTRY}/${IMAGE_NAME_LC}:latest"
+          fi
+          # On vX.Y.Z tag pushes, also publish a SemVer tag for humans.
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            SEMVER="${GITHUB_REF#refs/tags/}"
+            TAGS="${TAGS}\n${REGISTRY}/${IMAGE_NAME_LC}:${SEMVER}"
+          fi
+          {
+            echo "value=$PRIMARY"
+            echo "all<<EOF"
+            echo -e "$TAGS"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          IMAGE_NAME: ${{ env.IMAGE_NAME }}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@bcafcacb16a39f128d818304e6c9c0c18556b85f # v7.1.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.image_tag.outputs.all }}
+          # OCI labels for registry UIs, vulnerability scanners, and
+          # `docker inspect` forensics. Source/revision let you trace any
+          # deployed image back to the exact commit.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.ref.name=${{ github.ref_name }}
+            org.opencontainers.image.created=${{ github.event.repository.updated_at }}
+            org.opencontainers.image.licenses=MIT
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: ${{ steps.image_tag.outputs.value }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: github.ref == 'refs/heads/main'
+    # Using a GitHub Environment unlocks deploy-time protection rules
+    # (required reviewers, wait timers, environment-scoped secrets) and
+    # produces a deployment history in the repo UI. Configure required
+    # reviewers under repo Settings → Environments → production.
+    environment:
+      name: production
+      url: ${{ vars.DEPLOYMENT_URL }}
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Deploy to mStudio
+        uses: mittwald/deploy-container-action@0551d75d8ea585aefc0de678b87a59e400b80faf # v1.0.5
+        with:
+          api_token: ${{ secrets.MITTWALD_API_TOKEN }}
+          stack_id: ${{ vars.STACK_ID }}
+          stack_file: deploy/stack.yaml
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image_tag }}
+          EXTENSION_ID: ${{ vars.EXTENSION_ID }}
+          EXTENSION_SECRET: ${{ secrets.EXTENSION_SECRET }}
+          ENCRYPTION_MASTER_PASSWORD: ${{ secrets.ENCRYPTION_MASTER_PASSWORD }}
+          ENCRYPTION_SALT: ${{ secrets.ENCRYPTION_SALT }}

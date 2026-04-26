@@ -1,0 +1,1 @@
+ALTER TABLE `extension_instances` ADD `enabled` integer DEFAULT true NOT NULL;
