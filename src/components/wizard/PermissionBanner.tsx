@@ -27,14 +27,16 @@ function PermissionBannerContent() {
   const { t } = useTranslation()
   const perm = BunnyCdnGhost.checkPermissions().use()
   if (!perm || perm.allowed) return null
+  // Suppress when the role couldn't be resolved (typically because the
+  // extension hasn't been granted `project:read`). The downstream mittwald
+  // write call will enforce permissions itself, so we'd rather show no banner
+  // than a scary "contact admin" warning to a user who is in fact owner.
+  if (!perm.role) return null
 
-  const message = perm.role
-    ? t('wizard.permissionBanner.withRole', { role: perm.role })
-    : t('wizard.permissionBanner.unknownRole')
   return (
     <LayoutCard>
       <Alert status="warning">
-        <AlertText>{message}</AlertText>
+        <AlertText>{t('wizard.permissionBanner.withRole', { role: perm.role })}</AlertText>
       </Alert>
     </LayoutCard>
   )

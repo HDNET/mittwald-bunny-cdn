@@ -43,6 +43,8 @@
     "BUNNY_NOT_FOUND": "Die angeforderte Ressource existiert nicht mehr bei bunny.net. Bitte lade die Seite neu.",
     "BUNNY_API_ERROR": "bunny.net meldet einen Fehler (HTTP {{status}}). Bitte versuche es erneut oder prüfe status.bunny.net.",
     "PULL_ZONE_DELETE_FAILED": "Pull Zone konnte nicht gelöscht werden (HTTP {{status}}). Bitte versuche es erneut oder lösche sie manuell im bunny.net Dashboard.",
+    "PULL_ZONE_NAME_GLOBAL_TAKEN": "Der Pull-Zone-Name „{{name}}\" ist bei bunny.net global vergeben (auch von anderen Accounts). Bitte einen anderen Domain-Suffix wählen oder den fremden Eintrag im bunny.net-Dashboard prüfen.",
+    "PULL_ZONE_ORIGIN_MISMATCH": "Pull Zone „{{name}}\" existiert in deinem bunny.net-Konto, zeigt aber auf {{existingOrigin}} statt auf {{expectedOrigin}}. Bitte im bunny.net-Dashboard den vorhandenen Eintrag prüfen oder löschen.",
     "HOSTNAME_REMOVE_FAILED": "Hostname konnte nicht entfernt werden (HTTP {{status}}). Bitte versuche es erneut oder entferne ihn manuell im bunny.net Dashboard.",
     "MITTWALD_API_ERROR": "mittwald meldet einen Fehler (HTTP {{status}}). Bitte versuche es erneut oder prüfe den Status in mStudio.",
     "PULL_ZONE_RESPONSE_INCOMPLETE": "Die Pull-Zone-Daten konnten nicht vollständig geladen werden. Bitte lade die Seite neu."
@@ -129,7 +131,7 @@
       },
       "customHostname": {
         "heading": "Custom Hostname",
-        "description": "Bei aktivem Toggle richten wir <1>{{subdomain}}</1> als deine CDN-Adresse ein: mittwald legt den CNAME an, bunny.net hinterlegt den Hostname und stellt automatisch ein kostenloses SSL-Zertifikat aus. Deaktiviert bekommst du nur die neutrale <1>&lt;pullzone&gt;.b-cdn.net</1>-URL und musst diese manuell in TYPO3 eintragen.",
+        "description": "Bei aktivem Toggle richten wir <1>{{subdomain}}</1> als deine CDN-Adresse ein: mittwald legt den CNAME an, bunny.net hinterlegt den Hostname und stellt automatisch ein kostenloses SSL-Zertifikat aus. Deaktiviert bekommst du nur die neutrale <1>[pullzone].b-cdn.net</1>-URL und musst diese manuell in TYPO3 eintragen.",
         "toggle": "Custom Hostname automatisch einrichten"
       }
     },
@@ -143,7 +145,7 @@
         "cdnSubdomain": "CDN-Subdomain",
         "cdnHostname": "CDN-Hostname",
         "origin": "Origin-Server",
-        "pullZoneOnly": "nur <pullzone>.b-cdn.net",
+        "pullZoneOnly": "nur [pullzone].b-cdn.net",
         "internalOrigin": "mittwald-intern"
       },
       "modeBadges": {
@@ -161,7 +163,7 @@
           },
           "withoutCustomHostname": {
             "step1": "Eine Pull Zone wird bei bunny.net für deine statischen Dateien erstellt.",
-            "step2": "Du bekommst die neutrale <1>&lt;pullzone&gt;.b-cdn.net</1>-URL. Custom Hostname (<1>cdn.{{hostname}}</1>) kannst du später im Dashboard aktivieren.",
+            "step2": "Du bekommst die neutrale <1>[pullzone].b-cdn.net</1>-URL. Custom Hostname (<1>cdn.{{hostname}}</1>) kannst du später im Dashboard aktivieren.",
             "step3": "Du landest im Dashboard mit der CDN-Domain und den Konfigurations-Snippets für dein TYPO3-Setup."
           }
         },

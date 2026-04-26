@@ -43,6 +43,8 @@
     "BUNNY_NOT_FOUND": "The requested resource no longer exists at bunny.net. Please reload the page.",
     "BUNNY_API_ERROR": "bunny.net reports an error (HTTP {{status}}). Please try again or check status.bunny.net.",
     "PULL_ZONE_DELETE_FAILED": "Pull zone could not be deleted (HTTP {{status}}). Please try again or delete it manually in the bunny.net dashboard.",
+    "PULL_ZONE_NAME_GLOBAL_TAKEN": "The pull-zone name “{{name}}” is already taken globally on bunny.net (possibly by another account). Please pick a different domain suffix or check the existing entry in the bunny.net dashboard.",
+    "PULL_ZONE_ORIGIN_MISMATCH": "Pull zone “{{name}}” exists in your bunny.net account but points at {{existingOrigin}} instead of {{expectedOrigin}}. Please review or delete the existing entry in the bunny.net dashboard.",
     "HOSTNAME_REMOVE_FAILED": "Hostname could not be removed (HTTP {{status}}). Please try again or remove it manually in the bunny.net dashboard.",
     "MITTWALD_API_ERROR": "mittwald reports an error (HTTP {{status}}). Please try again or check the status in mStudio.",
     "PULL_ZONE_RESPONSE_INCOMPLETE": "Pull zone data could not be fully loaded. Please reload the page."
@@ -129,7 +131,7 @@
       },
       "customHostname": {
         "heading": "Custom hostname",
-        "description": "When the toggle is on we set up <1>{{subdomain}}</1> as your CDN address: mittwald creates the CNAME, bunny.net registers the hostname and automatically issues a free SSL certificate. When off you only get the neutral <1>&lt;pullzone&gt;.b-cdn.net</1> URL and have to wire it into TYPO3 manually.",
+        "description": "When the toggle is on we set up <1>{{subdomain}}</1> as your CDN address: mittwald creates the CNAME, bunny.net registers the hostname and automatically issues a free SSL certificate. When off you only get the neutral <1>[pullzone].b-cdn.net</1> URL and have to wire it into TYPO3 manually.",
         "toggle": "Set up the custom hostname automatically"
       }
     },
@@ -143,7 +145,7 @@
         "cdnSubdomain": "CDN subdomain",
         "cdnHostname": "CDN hostname",
         "origin": "Origin server",
-        "pullZoneOnly": "only <pullzone>.b-cdn.net",
+        "pullZoneOnly": "only [pullzone].b-cdn.net",
         "internalOrigin": "mittwald-internal"
       },
       "modeBadges": {
@@ -161,7 +163,7 @@
           },
           "withoutCustomHostname": {
             "step1": "A pull zone is created at bunny.net for your static files.",
-            "step2": "You get the neutral <1>&lt;pullzone&gt;.b-cdn.net</1> URL. The custom hostname (<1>cdn.{{hostname}}</1>) can be enabled from the dashboard later.",
+            "step2": "You get the neutral <1>[pullzone].b-cdn.net</1> URL. The custom hostname (<1>cdn.{{hostname}}</1>) can be enabled from the dashboard later.",
             "step3": "You land on the dashboard with the CDN domain and the configuration snippets for your TYPO3 setup."
           }
         },

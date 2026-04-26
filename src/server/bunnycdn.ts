@@ -19,6 +19,8 @@ export interface PullZoneResult {
   id: number
   name: string
   cdnDomain: string
+  /** True if this zone already existed on bunny.net (same origin) and we adopted it instead of creating a new one. */
+  adopted: boolean
 }
 
 export interface PullZoneInfo {
@@ -166,30 +168,110 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
 
 // ─── Pull Zone CRUD ─────────────────────────────────────────────────────────
 
+/**
+ * bunny.net pull zone names are unique across the entire bunny.net platform
+ * (not just per account). When a name is already taken we check whether the
+ * existing zone lives in *our* account — if yes and the origin matches, we
+ * silently adopt it instead of failing. This is the only sane UX since the
+ * wizard derives the zone name deterministically from the domain (`hdlab.de`
+ * → `hdlabde`), so the user has no way to "pick a different name".
+ *
+ * Three branches:
+ *   1. created normally → adopted: false
+ *   2. name taken, found in our account, same origin → adopted: true
+ *   3. name taken, in our account but other origin → throw ORIGIN_MISMATCH
+ *   4. name taken, not in our account → throw NAME_GLOBAL_TAKEN
+ */
 export async function createPullZone(params: CreatePullZoneParams): Promise<PullZoneResult> {
   log.info(
     `[bunnycdn] Creating pull zone "${params.name}" with origin ${params.originUrl} (apiKey: ${redactApiKey(params.apiKey)})`,
   )
 
-  const data = await bunnyRequest<{
-    Id: number
-    Name: string
-    Hostnames: Array<{ Value: string }>
-  }>('/pullzone', params.apiKey, {
-    method: 'POST',
-    body: JSON.stringify({
-      Name: params.name,
-      OriginUrl: params.originUrl,
-    }),
-  })
+  try {
+    const data = await bunnyRequest<{
+      Id: number
+      Name: string
+      Hostnames: Array<{ Value: string }>
+    }>('/pullzone', params.apiKey, {
+      method: 'POST',
+      body: JSON.stringify({
+        Name: params.name,
+        OriginUrl: params.originUrl,
+      }),
+    })
 
-  const cdnHostname = data.Hostnames?.find((h) => h.Value.endsWith('.b-cdn.net'))
+    const cdnHostname = data.Hostnames?.find((h) => h.Value.endsWith('.b-cdn.net'))
 
-  return {
-    id: data.Id,
-    name: data.Name,
-    cdnDomain: cdnHostname?.Value ?? `${data.Name}.b-cdn.net`,
+    return {
+      id: data.Id,
+      name: data.Name,
+      cdnDomain: cdnHostname?.Value ?? `${data.Name}.b-cdn.net`,
+      adopted: false,
+    }
+  } catch (e) {
+    if (!isPullZoneNameTakenError(e)) throw e
+    return await adoptExistingPullZone(params)
   }
+}
+
+function isPullZoneNameTakenError(e: unknown): boolean {
+  if (!isAppError(e)) return false
+  return e.code === 'BUNNY_API_ERROR' && (e.details ?? '').includes('pullzone.name_taken')
+}
+
+async function adoptExistingPullZone(params: CreatePullZoneParams): Promise<PullZoneResult> {
+  log.info(`[bunnycdn] Name "${params.name}" already taken — checking own account for adoption`)
+  const existing = await findPullZoneByName(params.name, params.apiKey)
+
+  if (!existing) {
+    throw createAppError(
+      ErrorType.BUNNY_API_ERROR,
+      `Der Pull-Zone-Name „${params.name}" ist bei bunny.net global vergeben. Bitte einen anderen Domain-Suffix wählen oder im bunny.net-Dashboard prüfen.`,
+      { retryable: false, code: 'PULL_ZONE_NAME_GLOBAL_TAKEN', variables: { name: params.name } },
+    )
+  }
+
+  if (!isSameOrigin(existing.originUrl, params.originUrl)) {
+    throw createAppError(
+      ErrorType.BUNNY_API_ERROR,
+      `Pull Zone „${params.name}" existiert in deinem bunny.net-Konto, zeigt aber auf ${existing.originUrl} statt auf ${params.originUrl}. Bitte im bunny.net-Dashboard prüfen oder Zone löschen.`,
+      {
+        retryable: false,
+        code: 'PULL_ZONE_ORIGIN_MISMATCH',
+        variables: {
+          name: params.name,
+          existingOrigin: existing.originUrl,
+          expectedOrigin: params.originUrl,
+        },
+      },
+    )
+  }
+
+  log.info(`[bunnycdn] Adopting existing pull zone ${existing.id} ("${existing.name}") — same account, same origin`)
+  return {
+    id: existing.id,
+    name: existing.name,
+    cdnDomain: existing.cdnDomain,
+    adopted: true,
+  }
+}
+
+/** Compare origin URLs by hostname + pathname; ignore protocol vs. plain-host shorthand differences. */
+function isSameOrigin(a: string, b: string): boolean {
+  const norm = (s: string) => s.replace(/\/+$/, '').toLowerCase()
+  return norm(a) === norm(b)
+}
+
+/** Fetch a single pull zone by exact name from the caller's bunny.net account. */
+export async function findPullZoneByName(name: string, apiKey: string): Promise<PullZoneInfo | null> {
+  // bunny.net's GET /pullzone returns a paginated response; ?search filters
+  // server-side by name substring, but we still match exactly client-side
+  // because the API may return prefixed/related names too.
+  const url = `/pullzone?search=${encodeURIComponent(name)}`
+  const data = await bunnyRequest<{ Items?: BunnyPullZoneRaw[] } | BunnyPullZoneRaw[]>(url, apiKey)
+  const items = Array.isArray(data) ? data : (data.Items ?? [])
+  const match = items.find((p) => p.Name === name)
+  return match ? mapPullZone(match) : null
 }
 
 export async function deletePullZone(pullZoneId: number, apiKey: string): Promise<void> {
