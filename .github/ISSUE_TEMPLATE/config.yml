@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sicherheitslücke melden
+    url: https://github.com/HDNET/mittwald-bunny-cdn/security/advisories/new
+    about: Bitte NICHT als öffentliches Issue. Nutze GitHub Security Advisories — siehe SECURITY.md.
+  - name: Frage zu mittwald-Extensions allgemein
+    url: https://developer.mittwald.de/
+    about: Für Plattform-Fragen ist die mittwald Developer-Doku die richtige Adresse.

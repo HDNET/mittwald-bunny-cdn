@@ -1,0 +1,47 @@
+name: Bug Report
+description: Etwas funktioniert nicht wie erwartet
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke fürs Melden! Bitte fülle die Felder so vollständig wie möglich aus —
+        je mehr Kontext, desto schneller können wir's reproduzieren und fixen.
+  - type: textarea
+    id: description
+    attributes:
+      label: Was ist passiert?
+      description: Beschreibe das beobachtete Verhalten und was du stattdessen erwartet hattest.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Schritte zur Reproduktion
+      placeholder: |
+        1. mStudio öffnen, Extension installieren
+        2. Wizard starten, …
+        3. Fehler erscheint bei …
+    validations:
+      required: true
+  - type: input
+    id: extension-version
+    attributes:
+      label: Extension-Version
+      description: Steht im "Über"-Tab der Extension oder im package.json
+      placeholder: '0.1.0'
+  - type: dropdown
+    id: cdn-mode
+    attributes:
+      label: CDN-Modus
+      options:
+        - Asset-CDN
+        - Full-Site
+        - noch nicht eingerichtet
+        - weiß ich nicht
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / Screenshots
+      description: Browser-Konsole, Fehlermeldungen aus dem mStudio-iframe, oder relevante Container-Logs (`mw container logs`).
+      render: shell

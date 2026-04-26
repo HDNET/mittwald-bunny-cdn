@@ -1,0 +1,23 @@
+name: Feature-Vorschlag
+description: Eine Idee, was die Extension besser machen könnte
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Welches Problem löst es?
+      description: Beschreibe den konkreten Use-Case oder Pain-Point. „Es wäre cool wenn …" reicht nicht — wir brauchen den Anwendungsfall.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Vorgeschlagene Lösung
+      description: Wie könnte das aussehen? UI-Skizze, neuer Wizard-Schritt, Setting-Toggle, was auch immer.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativen die du erwogen hast
+      description: Optional. Hilft uns die Trade-offs zu verstehen.

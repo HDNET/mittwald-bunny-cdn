@@ -1,5 +1,9 @@
 # mittwald BunnyCDN Extension
 
+[![CI](https://github.com/HDNET/mittwald-bunny-cdn/actions/workflows/ci.yml/badge.svg)](https://github.com/HDNET/mittwald-bunny-cdn/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D24-brightgreen)](.nvmrc)
+
 > Developed by [HDNET GmbH & Co. KG](https://www.hdnet.de)
 
 ## Table of Contents
