@@ -123,7 +123,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
       - name: Deploy to mStudio
-        uses: mittwald/deploy-container-action@0551d75d8ea585aefc0de678b87a59e400b80faf # v1.0.5
+        uses: mittwald/deploy-container-action@1ce543d4b56e7ecee4a402fe3ec0b0d10e4bfab2 # v1.0.6
         with:
           api_token: ${{ secrets.MITTWALD_API_TOKEN }}
           stack_id: ${{ vars.STACK_ID }}
