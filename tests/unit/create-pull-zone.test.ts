@@ -5,13 +5,14 @@ import { extensionInstances, pullZones } from '~/server/db/schema'
 import { createTestDb, seedInstance } from '../helpers/db'
 
 vi.mock('~/server/bunnycdn.js', () => ({
-  createPullZone: vi.fn().mockResolvedValue({ id: 42, name: 'test', cdnDomain: 'test.b-cdn.net' }),
+  createPullZone: vi.fn().mockResolvedValue({ id: 42, name: 'test', cdnDomain: 'test.b-cdn.net', adopted: false }),
   setupFullSiteCdn: vi.fn().mockResolvedValue(undefined),
   setEuOnly: vi.fn().mockResolvedValue(undefined),
   setEuMode: vi.fn().mockResolvedValue(undefined),
   addHostname: vi.fn().mockResolvedValue(undefined),
   removeHostname: vi.fn().mockResolvedValue(undefined),
   enableFreeSsl: vi.fn().mockResolvedValue(undefined),
+  deletePullZone: vi.fn().mockResolvedValue(undefined),
 }))
 
 process.env.ENCRYPTION_MASTER_PASSWORD = 'test-password'
@@ -147,6 +148,120 @@ describe('domain/createPullZone', () => {
     })
 
     expect(bunny.setupFullSiteCdn).toHaveBeenCalledWith(42, 'www.example.com', expect.any(String))
+  })
+})
+
+describe('domain/createPullZone rollback on failure', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+  })
+
+  async function seedWithApiKey() {
+    const db = createTestDb()
+    seedInstance(db)
+    const { encrypt } = await import('~/server/crypto')
+    db.update(extensionInstances)
+      .set({ encryptedApiKey: encrypt('test-key') })
+      .where(eq(extensionInstances.id, 'inst-1'))
+      .run()
+    return db
+  }
+
+  it('rolls back bunny zone when setEuMode fails', async () => {
+    const db = await seedWithApiKey()
+    const bunny = await import('~/server/bunnycdn')
+    vi.mocked(bunny.createPullZone).mockResolvedValueOnce({
+      id: 42,
+      name: 'test',
+      cdnDomain: 'test.b-cdn.net',
+      adopted: false,
+    })
+    vi.mocked(bunny.setEuMode).mockRejectedValueOnce(new Error('bunny 500'))
+
+    await expect(
+      createPullZone(db, 'inst-1', 'project-1', {
+        name: 'testzone',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        euOnly: true,
+        customHostnameEnabled: false,
+      }),
+    ).rejects.toThrow('bunny 500')
+
+    expect(bunny.deletePullZone).toHaveBeenCalledWith(42, expect.any(String))
+    expect(db.select().from(pullZones).where(eq(pullZones.instanceId, 'inst-1')).get()).toBeUndefined()
+  })
+
+  it('rolls back when addHostname fails', async () => {
+    const db = await seedWithApiKey()
+    const bunny = await import('~/server/bunnycdn')
+    vi.mocked(bunny.createPullZone).mockResolvedValueOnce({
+      id: 42,
+      name: 'test',
+      cdnDomain: 'test.b-cdn.net',
+      adopted: false,
+    })
+    vi.mocked(bunny.addHostname).mockRejectedValueOnce(new Error('hostname conflict'))
+
+    await expect(
+      createPullZone(db, 'inst-1', 'project-1', {
+        name: 'testzone',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        domain: 'example.com',
+      }),
+    ).rejects.toThrow('hostname conflict')
+
+    expect(bunny.deletePullZone).toHaveBeenCalledWith(42, expect.any(String))
+  })
+
+  it('does NOT roll back when zone was adopted (pre-existed at bunny)', async () => {
+    const db = await seedWithApiKey()
+    const bunny = await import('~/server/bunnycdn')
+    vi.mocked(bunny.createPullZone).mockResolvedValueOnce({
+      id: 42,
+      name: 'test',
+      cdnDomain: 'test.b-cdn.net',
+      adopted: true,
+    })
+    vi.mocked(bunny.setEuMode).mockRejectedValueOnce(new Error('bunny 500'))
+
+    await expect(
+      createPullZone(db, 'inst-1', 'project-1', {
+        name: 'testzone',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        euOnly: true,
+        customHostnameEnabled: false,
+      }),
+    ).rejects.toThrow('bunny 500')
+
+    expect(bunny.deletePullZone).not.toHaveBeenCalled()
+  })
+
+  it('cleanup failure does not mask the original error', async () => {
+    const db = await seedWithApiKey()
+    const bunny = await import('~/server/bunnycdn')
+    vi.mocked(bunny.createPullZone).mockResolvedValueOnce({
+      id: 42,
+      name: 'test',
+      cdnDomain: 'test.b-cdn.net',
+      adopted: false,
+    })
+    vi.mocked(bunny.setEuMode).mockRejectedValueOnce(new Error('original failure'))
+    vi.mocked(bunny.deletePullZone).mockRejectedValueOnce(new Error('cleanup also failed'))
+
+    await expect(
+      createPullZone(db, 'inst-1', 'project-1', {
+        name: 'testzone',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        euOnly: true,
+        customHostnameEnabled: false,
+      }),
+    ).rejects.toThrow('original failure')
+
+    expect(bunny.deletePullZone).toHaveBeenCalledWith(42, expect.any(String))
   })
 })
 
@@ -294,6 +409,39 @@ describe('domain/addCustomHostname', () => {
     await expect(addCustomHostname(db, 'inst-1', 'project-1', 'example.com')).rejects.toMatchObject({
       type: 'VALIDATION_ERROR',
     })
+  })
+
+  it('rolls back addHostname when enableFreeSsl fails', async () => {
+    const db = createTestDb()
+    seedInstance(db)
+
+    const { encrypt } = await import('~/server/crypto')
+    db.update(extensionInstances)
+      .set({ encryptedApiKey: encrypt('test-key') })
+      .where(eq(extensionInstances.id, 'inst-1'))
+      .run()
+
+    db.insert(pullZones)
+      .values({
+        id: 99,
+        instanceId: 'inst-1',
+        cdnDomain: 'xyz.b-cdn.net',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        customHostname: null,
+        createdAt: new Date(),
+      })
+      .run()
+
+    const bunny = await import('~/server/bunnycdn')
+    vi.mocked(bunny.enableFreeSsl).mockRejectedValueOnce(new Error('ssl provisioning failed'))
+
+    await expect(addCustomHostname(db, 'inst-1', 'project-1', 'example.com')).rejects.toThrow('ssl provisioning failed')
+
+    expect(bunny.addHostname).toHaveBeenCalledWith(99, 'cdn.example.com', expect.any(String))
+    expect(bunny.removeHostname).toHaveBeenCalledWith(99, 'cdn.example.com', expect.any(String))
+    const row = db.select().from(pullZones).where(eq(pullZones.instanceId, 'inst-1')).get()
+    expect(row?.customHostname).toBeNull()
   })
 
   it('is a no-op when the pull zone already has a custom hostname', async () => {
