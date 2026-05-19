@@ -129,9 +129,10 @@ lives in **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**.
 ```bash
 npm test            # run all tests
 npm run test:watch  # watch mode
+npm run coverage    # run tests with v8 coverage report (HTML + lcov under ./coverage)
 ```
 
-More than 210 tests across 25 test files including property-based tests (fast-check), unit tests covering crypto, webhooks, BunnyCDN API, auth, validation, scope, membership, security headers, health checks, i18n, and E2E smoke tests.
+More than 220 tests across 25 test files including property-based tests (fast-check), unit tests covering crypto, webhooks, BunnyCDN API, auth, validation, scope, membership, security headers, health checks, i18n, and E2E smoke tests.
 
 ## Architecture
 

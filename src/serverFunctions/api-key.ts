@@ -6,7 +6,7 @@ import { decrypt, encrypt } from '~/server/crypto'
 import { getDb } from '~/server/db/index'
 import { extensionInstances } from '~/server/db/schema'
 import { createLogger } from '~/server/logger.js'
-import { requireEnabled } from '~/server/scope'
+import { requireEnabled, requireInstanceExists } from '~/server/scope'
 import { createAppError, ErrorType } from '~/shared/errors'
 import { validateNonEmpty } from '~/shared/validation'
 
@@ -54,12 +54,8 @@ export const deleteApiKeyFn = createServerFn({ method: 'POST' })
 export const getApiKeyStatusFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])
   .handler(async ({ context }: { context: { extensionInstanceId: string } }) => {
-    const instance = getDb()
-      .select()
-      .from(extensionInstances)
-      .where(eq(extensionInstances.id, context.extensionInstanceId))
-      .get()
-    if (!instance?.encryptedApiKey) return { hasApiKey: false, last4: null }
+    const instance = requireInstanceExists(getDb(), context.extensionInstanceId)
+    if (!instance.encryptedApiKey) return { hasApiKey: false, last4: null }
     try {
       const key = decrypt(instance.encryptedApiKey)
       return { hasApiKey: true, last4: key.slice(-4) }

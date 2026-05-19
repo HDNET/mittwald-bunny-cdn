@@ -49,6 +49,7 @@
     "start": "node .output/server/index.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "coverage": "vitest run --coverage",
     "dev:iframe": "npm run build && node --env-file=.env .output/server/index.mjs",
     "routes:generate": "tsr generate",
     "typecheck": "npm run routes:generate && tsc --noEmit",
