@@ -393,11 +393,15 @@
     },
     "dangerZone": {
       "label": "CDN-Setup entfernen",
-      "description": "Die Pull Zone, der DNS-Eintrag (CNAME) und alle CDN-Einstellungen werden unwiderruflich gelöscht. Deine Domain zeigt danach wieder direkt auf den mittwald-Server.",
+      "description": "Beim 'Komplett löschen' werden Pull Zone, DNS-Eintrag und alle Extension-Daten unwiderruflich entfernt. Bei 'Verknüpfung trennen' bleibt die Pull Zone bei bunny.net erhalten — du verwaltest sie dort selbst weiter.",
       "deleteCta": "CDN-Setup entfernen",
-      "confirmWarning": "Bist du sicher? Die Pull Zone bei bunny.net und der DNS-Eintrag bei mittwald werden gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+      "confirmChoice": "Wie möchtest du fortfahren?",
+      "deleteFinal": "Komplett löschen",
+      "deleteHint": "Löscht die Pull Zone bei bunny.net, entfernt den DNS-Eintrag (CNAME) und alle Extension-Daten. Kann nicht rückgängig gemacht werden.",
       "deleting": "Wird gelöscht…",
-      "deleteFinal": "Endgültig löschen"
+      "detachFinal": "Verknüpfung trennen",
+      "detachHint": "Lässt die Pull Zone bei bunny.net unangetastet — du verwaltest sie weiter über das bunny.net Dashboard. Der DNS-Eintrag bleibt vorerst bestehen.",
+      "detaching": "Wird getrennt…"
     },
     "integrationTab": {
       "heading": "Integration",

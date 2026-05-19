@@ -307,6 +307,27 @@ export async function removeCustomHostname(
   return { dnsCleared }
 }
 
+/**
+ * Drops the pull-zone link from the extension without touching bunny.net.
+ * Use case: the user wants to uninstall the extension but keep the zone at
+ * bunny.net (and continue managing it from the bunny.net dashboard).
+ *
+ * The mittwald CNAME is intentionally *not* cleaned up here: the user
+ * keeps the zone, so the CNAME is probably what they want to keep too.
+ */
+export function detachPullZone(db: AppDatabase, extensionInstanceId: string): { pullZoneId: number } {
+  const pullZone = db.select().from(pullZones).where(eq(pullZones.instanceId, extensionInstanceId)).get()
+  if (!pullZone) {
+    throw createAppError(ErrorType.NOT_FOUND, 'Keine Pull Zone vorhanden.', {
+      retryable: false,
+      code: 'PULL_ZONE_NOT_FOUND',
+    })
+  }
+  log.info(`Detaching pull zone ${pullZone.id} from instance ${extensionInstanceId} (bunny zone preserved)`)
+  db.delete(pullZones).where(eq(pullZones.instanceId, extensionInstanceId)).run()
+  return { pullZoneId: pullZone.id }
+}
+
 export function loadInstanceAndPullZone(db: AppDatabase, extensionInstanceId: string) {
   const instance = db.select().from(extensionInstances).where(eq(extensionInstances.id, extensionInstanceId)).get()
   if (!instance?.encryptedApiKey) {

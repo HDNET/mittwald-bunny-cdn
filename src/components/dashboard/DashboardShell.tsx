@@ -99,6 +99,15 @@ function DashboardContent({ onStateChange }: Props) {
     }
   }
 
+  async function handleDetach() {
+    try {
+      await BunnyCdnGhost.detachPullZone()
+      onStateChange()
+    } catch (e) {
+      setMsg({ text: localizeError(e, t), status: 'danger' })
+    }
+  }
+
   if (!pullZone?.exists) return <Text>{t('dashboard.noPullZone')}</Text>
   const pz = resolvePullZone(pullZone)
   const onError = (m: string) => setMsg({ text: m, status: 'danger' })
@@ -168,7 +177,7 @@ function DashboardContent({ onStateChange }: Props) {
 
             <Tab id="account">
               <TabTitle>{t('dashboard.tabs.account')}</TabTitle>
-              <AccountTab onPatched={onStateChange} onError={onError} onDelete={handleDelete} />
+              <AccountTab onPatched={onStateChange} onError={onError} onDelete={handleDelete} onDetach={handleDetach} />
             </Tab>
 
             <Tab id="about">

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { addCustomHostname, createPullZone, removeCustomHostname } from '~/domain/pull-zone'
+import { addCustomHostname, createPullZone, detachPullZone, removeCustomHostname } from '~/domain/pull-zone'
 import { extensionInstances, pullZones } from '~/server/db/schema'
 import { createTestDb, seedInstance } from '../helpers/db'
 
@@ -576,5 +576,70 @@ describe('domain/removeCustomHostname', () => {
     await expect(removeCustomHostname(db, 'inst-1', 'project-1')).rejects.toMatchObject({
       type: 'VALIDATION_ERROR',
     })
+  })
+})
+
+describe('domain/detachPullZone', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+  })
+
+  it('deletes the DB row and does NOT call bunny.deletePullZone', async () => {
+    const db = createTestDb()
+    seedInstance(db)
+    db.insert(pullZones)
+      .values({
+        id: 300,
+        instanceId: 'inst-1',
+        cdnDomain: 'detach.b-cdn.net',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        customHostname: 'cdn.example.com',
+        createdAt: new Date(),
+      })
+      .run()
+
+    const bunny = await import('~/server/bunnycdn')
+    const result = detachPullZone(db, 'inst-1')
+
+    expect(result.pullZoneId).toBe(300)
+    expect(bunny.deletePullZone).not.toHaveBeenCalled()
+    expect(bunny.removeHostname).not.toHaveBeenCalled()
+
+    const row = db.select().from(pullZones).where(eq(pullZones.instanceId, 'inst-1')).get()
+    expect(row).toBeUndefined()
+  })
+
+  it('throws NOT_FOUND when no pull zone is linked', () => {
+    const db = createTestDb()
+    seedInstance(db)
+
+    let thrown: unknown
+    try {
+      detachPullZone(db, 'inst-1')
+    } catch (e) {
+      thrown = e
+    }
+    expect(thrown).toMatchObject({ type: 'NOT_FOUND', code: 'PULL_ZONE_NOT_FOUND' })
+  })
+
+  it('works without an API key (no bunny interaction needed)', () => {
+    const db = createTestDb()
+    seedInstance(db)
+    // Note: no encryptedApiKey set on the instance. Detach must still succeed.
+    db.insert(pullZones)
+      .values({
+        id: 301,
+        instanceId: 'inst-1',
+        cdnDomain: 'nokey.b-cdn.net',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        customHostname: null,
+        createdAt: new Date(),
+      })
+      .run()
+
+    const result = detachPullZone(db, 'inst-1')
+    expect(result.pullZoneId).toBe(301)
   })
 })
