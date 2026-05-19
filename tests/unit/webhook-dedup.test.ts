@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { processedWebhookRequests } from '~/server/db/schema.js'
 import { markProcessed, pruneOlderThan, startWebhookDedupSweeper, wasProcessed } from '~/server/webhooks/dedup.js'
 import { createTestDb } from '../helpers/db.js'
@@ -87,5 +87,79 @@ describe('startWebhookDedupSweeper', () => {
     expect(() => startWebhookDedupSweeper(db)).not.toThrow()
     expect(() => startWebhookDedupSweeper(db)).not.toThrow()
     process.env.NODE_ENV = before
+  })
+})
+
+describe('startWebhookDedupSweeper — active mode (NODE_ENV!=test)', () => {
+  let envBefore: string | undefined
+
+  beforeEach(() => {
+    envBefore = process.env.NODE_ENV
+    process.env.NODE_ENV = 'development'
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    process.env.NODE_ENV = envBefore
+    // The sweeper stores its interval handle in a module-scope `sweepHandle`.
+    // We cannot reset it from outside, so each test uses a fresh DB and the
+    // post-test cleanup just relies on `vi.useRealTimers()` to neutralise
+    // the leaked interval.
+  })
+
+  it('schedules an interval that prunes stale entries on each tick', async () => {
+    // Use a separate isolated module load so each test gets a fresh
+    // `sweepHandle = null` and won't be no-op'd by a prior test's handle.
+    vi.resetModules()
+    const {
+      markProcessed: m,
+      startWebhookDedupSweeper: start,
+      wasProcessed: w,
+    } = await import('~/server/webhooks/dedup.js')
+    const { processedWebhookRequests: pwr } = await import('~/server/db/schema.js')
+
+    const db = createTestDb()
+    m(db, 'old-entry')
+    // Force-age the row beyond the 14d retention window.
+    const overRetention = new Date(Date.now() - 15 * 24 * 60 * 60 * 1000)
+    db.update(pwr).set({ processedAt: overRetention }).where(eq(pwr.id, 'old-entry')).run()
+    expect(w(db, 'old-entry')).toBe(true)
+
+    start(db)
+    // SWEEP_INTERVAL_MS = 6h — advance past one tick.
+    await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000)
+
+    expect(w(db, 'old-entry')).toBe(false)
+  })
+
+  it('swallows db errors inside the sweep callback (does not crash the interval)', async () => {
+    vi.resetModules()
+    const { startWebhookDedupSweeper: start } = await import('~/server/webhooks/dedup.js')
+
+    // Stub a db whose .delete().where().run() throws.
+    const throwingDb = {
+      delete: () => ({
+        where: () => ({
+          run: () => {
+            throw new Error('disk full')
+          },
+        }),
+      }),
+    } as unknown as Parameters<typeof start>[0]
+
+    start(throwingDb)
+    // No throw bubbling out across the tick — caught and logged inside.
+    await vi.advanceTimersByTimeAsync(6 * 60 * 60 * 1000)
+  })
+
+  it('is idempotent on repeated calls — second call leaves the existing interval alone', async () => {
+    vi.resetModules()
+    const { startWebhookDedupSweeper: start } = await import('~/server/webhooks/dedup.js')
+
+    const db = createTestDb()
+    expect(() => start(db)).not.toThrow()
+    expect(() => start(db)).not.toThrow()
+    expect(() => start(db)).not.toThrow()
   })
 })

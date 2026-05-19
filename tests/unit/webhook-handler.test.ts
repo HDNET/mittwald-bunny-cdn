@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { extensionInstances, pullZones } from '~/server/db/schema.js'
 import {
   handleExtensionAdded,
@@ -8,6 +8,14 @@ import {
   handleSecretRotated,
 } from '~/server/webhooks/handler.js'
 import { createTestDb } from '../helpers/db.js'
+
+vi.mock('~/server/bunnycdn.js', () => ({
+  deletePullZone: vi.fn().mockResolvedValue(undefined),
+}))
+
+// `decrypt` needs the encryption env vars set when imported by handler.ts.
+process.env.ENCRYPTION_MASTER_PASSWORD = process.env.ENCRYPTION_MASTER_PASSWORD || 'test-password'
+process.env.ENCRYPTION_SALT = process.env.ENCRYPTION_SALT || 'test-salt'
 
 describe('handleExtensionAdded', () => {
   let db: ReturnType<typeof createTestDb>
@@ -341,5 +349,106 @@ describe('handleInstanceRemoved', () => {
 
     const rows = db.select().from(extensionInstances).all()
     expect(rows).toHaveLength(1)
+  })
+
+  it('best-effort deletes the bunny zone when an API key is present', async () => {
+    const { encrypt } = await import('~/server/crypto.js')
+    db.update(extensionInstances)
+      .set({ encryptedApiKey: encrypt('test-key') })
+      .where(eq(extensionInstances.id, 'inst-del'))
+      .run()
+    db.insert(pullZones)
+      .values({
+        id: 555,
+        instanceId: 'inst-del',
+        cdnDomain: 'xyz.b-cdn.net',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        createdAt: new Date(),
+      })
+      .run()
+
+    const bunny = await import('~/server/bunnycdn.js')
+    vi.mocked(bunny.deletePullZone).mockClear()
+
+    const result = await handleInstanceRemoved(db, {
+      id: 'inst-del',
+      kind: 'InstanceRemovedFromContext',
+      apiVersion: 'v1',
+      request: { id: 'req-1', createdAt: '2026-01-01T00:00:00Z', target: { method: 'POST', url: 'http://test' } },
+      context: { id: 'ctx', kind: 'project' },
+      meta: { extensionId: 'ext-1', contributorId: 'contrib-1' },
+      consentedScopes: [],
+      state: { enabled: true },
+    })
+
+    expect(bunny.deletePullZone).toHaveBeenCalledWith(555, 'test-key')
+    expect(result).toEqual({ hadPullZone: true, bunnyDeleted: true })
+  })
+
+  it('swallows bunny.deletePullZone failures (does not block instance removal)', async () => {
+    const { encrypt } = await import('~/server/crypto.js')
+    db.update(extensionInstances)
+      .set({ encryptedApiKey: encrypt('test-key') })
+      .where(eq(extensionInstances.id, 'inst-del'))
+      .run()
+    db.insert(pullZones)
+      .values({
+        id: 666,
+        instanceId: 'inst-del',
+        cdnDomain: 'xyz.b-cdn.net',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        createdAt: new Date(),
+      })
+      .run()
+
+    const bunny = await import('~/server/bunnycdn.js')
+    vi.mocked(bunny.deletePullZone).mockRejectedValueOnce(new Error('bunny 503'))
+
+    const result = await handleInstanceRemoved(db, {
+      id: 'inst-del',
+      kind: 'InstanceRemovedFromContext',
+      apiVersion: 'v1',
+      request: { id: 'req-1', createdAt: '2026-01-01T00:00:00Z', target: { method: 'POST', url: 'http://test' } },
+      context: { id: 'ctx', kind: 'project' },
+      meta: { extensionId: 'ext-1', contributorId: 'contrib-1' },
+      consentedScopes: [],
+      state: { enabled: true },
+    })
+
+    expect(result).toEqual({ hadPullZone: true, bunnyDeleted: false })
+    // Instance row still removed despite bunny failure
+    expect(db.select().from(extensionInstances).all()).toHaveLength(0)
+  })
+
+  it('logs and skips bunny call when pull zone exists but no API key is stored', async () => {
+    db.insert(pullZones)
+      .values({
+        id: 777,
+        instanceId: 'inst-del',
+        cdnDomain: 'xyz.b-cdn.net',
+        originUrl: 'https://example.com',
+        cdnMode: 'asset',
+        createdAt: new Date(),
+      })
+      .run()
+
+    const bunny = await import('~/server/bunnycdn.js')
+    vi.mocked(bunny.deletePullZone).mockClear()
+
+    const result = await handleInstanceRemoved(db, {
+      id: 'inst-del',
+      kind: 'InstanceRemovedFromContext',
+      apiVersion: 'v1',
+      request: { id: 'req-1', createdAt: '2026-01-01T00:00:00Z', target: { method: 'POST', url: 'http://test' } },
+      context: { id: 'ctx', kind: 'project' },
+      meta: { extensionId: 'ext-1', contributorId: 'contrib-1' },
+      consentedScopes: [],
+      state: { enabled: true },
+    })
+
+    expect(bunny.deletePullZone).not.toHaveBeenCalled()
+    expect(result).toEqual({ hadPullZone: true, bunnyDeleted: false })
   })
 })

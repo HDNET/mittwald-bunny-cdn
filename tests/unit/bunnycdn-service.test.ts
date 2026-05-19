@@ -248,3 +248,108 @@ describe('setupFullSiteCdn', () => {
     expect(urls[2]).toContain('loadFreeCertificate')
   })
 })
+
+describe('createPullZone — adoption flow', () => {
+  // bunny.net pull-zone names are globally unique. When POST returns the
+  // `pullzone.name_taken` error, createPullZone calls findPullZoneByName to
+  // see whether the existing zone lives in *our* account, and adopts it if so.
+
+  it('adopts an existing pull zone when name is taken in our account and origins match', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ ErrorKey: 'pullzone.name_taken' }), { status: 400 }))
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            Id: 9001,
+            Name: 'testzone',
+            Hostnames: [{ Value: 'testzone.b-cdn.net', HasCertificate: true }],
+            OriginUrl: 'https://example.com',
+            Enabled: true,
+            EnableGeoZoneEU: true,
+            EnableGeoZoneUS: true,
+            EnableGeoZoneASIA: true,
+            EnableGeoZoneSA: true,
+            EnableGeoZoneAF: true,
+          },
+        ]),
+        { status: 200 },
+      ),
+    )
+
+    const result = await createPullZone({ name: 'testzone', originUrl: 'https://example.com', apiKey: 'key' })
+
+    expect(result).toEqual({
+      id: 9001,
+      name: 'testzone',
+      cdnDomain: 'testzone.b-cdn.net',
+      adopted: true,
+    })
+  })
+
+  it('throws PULL_ZONE_ORIGIN_MISMATCH when the existing zone has a different origin', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ ErrorKey: 'pullzone.name_taken' }), { status: 400 }))
+    mockFetch.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            Id: 9002,
+            Name: 'testzone',
+            Hostnames: [{ Value: 'testzone.b-cdn.net' }],
+            OriginUrl: 'https://different.com',
+            Enabled: true,
+            EnableGeoZoneEU: true,
+            EnableGeoZoneUS: true,
+            EnableGeoZoneASIA: true,
+            EnableGeoZoneSA: true,
+            EnableGeoZoneAF: true,
+          },
+        ]),
+        { status: 200 },
+      ),
+    )
+
+    await expect(
+      createPullZone({ name: 'testzone', originUrl: 'https://example.com', apiKey: 'key' }),
+    ).rejects.toMatchObject({ code: 'PULL_ZONE_ORIGIN_MISMATCH', type: ErrorType.BUNNY_API_ERROR })
+  })
+
+  it('throws PULL_ZONE_NAME_GLOBAL_TAKEN when the name is taken outside our account', async () => {
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify({ ErrorKey: 'pullzone.name_taken' }), { status: 400 }))
+    // Search returns empty — name is taken globally but not by us.
+    mockFetch.mockResolvedValueOnce(new Response(JSON.stringify([]), { status: 200 }))
+
+    await expect(
+      createPullZone({ name: 'globaltaken', originUrl: 'https://example.com', apiKey: 'key' }),
+    ).rejects.toMatchObject({ code: 'PULL_ZONE_NAME_GLOBAL_TAKEN', type: ErrorType.BUNNY_API_ERROR })
+  })
+
+  it('rethrows non-name-taken errors unchanged', async () => {
+    mockFetch.mockResolvedValueOnce(new Response('Server Error', { status: 500 }))
+
+    await expect(
+      createPullZone({ name: 'whatever', originUrl: 'https://example.com', apiKey: 'key' }),
+    ).rejects.toMatchObject({ code: 'BUNNY_API_ERROR', type: ErrorType.BUNNY_API_ERROR })
+  })
+})
+
+describe('bunnyFetch / bunnyRequest edge cases', () => {
+  it('createPullZone surfaces BUNNY_TIMEOUT when fetch aborts', async () => {
+    // Simulate AbortController firing — global fetch rejects with an
+    // AbortError instance.
+    const abortError = Object.assign(new Error('aborted'), { name: 'AbortError' })
+    mockFetch.mockRejectedValue(abortError)
+
+    await expect(createPullZone({ name: 'x', originUrl: 'https://example.com', apiKey: 'key' })).rejects.toMatchObject({
+      code: 'BUNNY_TIMEOUT',
+      type: ErrorType.NETWORK_ERROR,
+    })
+  })
+
+  it('purgeCache succeeds even when the response body is empty (200 + no body)', async () => {
+    mockFetch.mockResolvedValue(new Response('', { status: 200 }))
+
+    // No throw, undefined return — exercises the `if (!text) return undefined`
+    // branch in bunnyRequest.
+    await expect(purgeCache(42, 'key')).resolves.toBeUndefined()
+  })
+})
