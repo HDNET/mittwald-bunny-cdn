@@ -62,6 +62,25 @@ export function requireScope(db: AppDatabase, instanceId: string, scope: string)
 }
 
 /**
+ * Confirms the instance row exists; for read-only server functions whose
+ * downstream code doesn't follow up with `requireScope` / `requireEnabled`.
+ * Unlike `requireEnabled`, this deliberately does *not* check the paused
+ * flag — reads stay available while the extension is paused so the UI can
+ * still render the paused banner. Returns the row so callers that already
+ * needed to fetch it can skip a second query.
+ */
+export function requireInstanceExists(db: AppDatabase, instanceId: string) {
+  const instance = db.select().from(extensionInstances).where(eq(extensionInstances.id, instanceId)).get()
+  if (!instance) {
+    throw createAppError(ErrorType.AUTH_ERROR, 'Extension-Instanz nicht gefunden.', {
+      retryable: false,
+      code: 'INSTANCE_NOT_FOUND',
+    })
+  }
+  return instance
+}
+
+/**
  * Blocks mutations when the extension instance is paused in mStudio.
  * mittwald sets `state.enabled = false` via webhook when the user deactivates
  * the instance; per mittwald docs the extension must then stop "functioning"
