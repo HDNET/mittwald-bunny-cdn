@@ -151,38 +151,54 @@ export async function createPullZone(
   log.info(`Creating pull zone for instance ${extensionInstanceId} (apiKey: [REDACTED])`)
   const result = await bunny.createPullZone({ name: data.name, originUrl: data.originUrl, apiKey })
 
-  if (data.euOnly) {
-    await bunny.setEuMode(result.id, true, apiKey)
-  }
+  try {
+    if (data.euOnly) {
+      await bunny.setEuMode(result.id, true, apiKey)
+    }
 
-  const customHostname = resolveCustomHostname(data)
-  if (customHostname) {
-    await registerCustomHostnameAtBunny(result.id, data.cdnMode, customHostname, apiKey)
-  }
+    const customHostname = resolveCustomHostname(data)
+    if (customHostname) {
+      await registerCustomHostnameAtBunny(result.id, data.cdnMode, customHostname, apiKey)
+    }
 
-  const dnsConfigured = customHostname
-    ? await tryConfigureDnsCname(dnsClient, contextId, data.domain, customHostname, result.cdnDomain)
-    : false
+    const dnsConfigured = customHostname
+      ? await tryConfigureDnsCname(dnsClient, contextId, data.domain, customHostname, result.cdnDomain)
+      : false
 
-  db.insert(pullZones)
-    .values({
+    db.insert(pullZones)
+      .values({
+        id: result.id,
+        instanceId: extensionInstanceId,
+        cdnDomain: result.cdnDomain,
+        originUrl: data.originUrl,
+        cdnMode: data.cdnMode,
+        customHostname,
+        createdAt: new Date(),
+      })
+      .run()
+
+    return {
       id: result.id,
-      instanceId: extensionInstanceId,
       cdnDomain: result.cdnDomain,
       originUrl: data.originUrl,
       cdnMode: data.cdnMode,
+      dnsConfigured,
       customHostname,
-      createdAt: new Date(),
-    })
-    .run()
-
-  return {
-    id: result.id,
-    cdnDomain: result.cdnDomain,
-    originUrl: data.originUrl,
-    cdnMode: data.cdnMode,
-    dnsConfigured,
-    customHostname,
+    }
+  } catch (err) {
+    // Adopted zones pre-date our call — leave them alone, the user already owns them.
+    if (!result.adopted) {
+      try {
+        await bunny.deletePullZone(result.id, apiKey)
+        log.info(`Rolled back bunny pull zone ${result.id} after creation failure`)
+      } catch (cleanupErr) {
+        log.error(
+          `Rollback of bunny pull zone ${result.id} failed — manual cleanup required`,
+          cleanupErr instanceof Error ? cleanupErr.message : cleanupErr,
+        )
+      }
+    }
+    throw err
   }
 }
 
@@ -215,23 +231,37 @@ export async function addCustomHostname(
   const customHostname = `cdn.${domain}`
 
   await bunny.addHostname(pullZone.id, customHostname, apiKey)
-  await bunny.enableFreeSsl(pullZone.id, customHostname, apiKey)
 
-  let dnsConfigured = false
-  if (dnsClient) {
+  try {
+    await bunny.enableFreeSsl(pullZone.id, customHostname, apiKey)
+
+    let dnsConfigured = false
+    if (dnsClient) {
+      try {
+        dnsConfigured = await configureDnsCname(dnsClient, contextId, domain, customHostname, pullZone.cdnDomain)
+      } catch (dnsError) {
+        log.warn(
+          '[domain] addCustomHostname auto-DNS failed (non-fatal):',
+          dnsError instanceof Error ? dnsError.message : dnsError,
+        )
+      }
+    }
+
+    db.update(pullZones).set({ customHostname }).where(eq(pullZones.instanceId, extensionInstanceId)).run()
+
+    return { customHostname, dnsConfigured }
+  } catch (err) {
     try {
-      dnsConfigured = await configureDnsCname(dnsClient, contextId, domain, customHostname, pullZone.cdnDomain)
-    } catch (dnsError) {
-      log.warn(
-        '[domain] addCustomHostname auto-DNS failed (non-fatal):',
-        dnsError instanceof Error ? dnsError.message : dnsError,
+      await bunny.removeHostname(pullZone.id, customHostname, apiKey)
+      log.info(`Rolled back custom hostname ${customHostname} on pull zone ${pullZone.id} after failure`)
+    } catch (cleanupErr) {
+      log.error(
+        `Rollback of custom hostname ${customHostname} failed — manual cleanup required`,
+        cleanupErr instanceof Error ? cleanupErr.message : cleanupErr,
       )
     }
+    throw err
   }
-
-  db.update(pullZones).set({ customHostname }).where(eq(pullZones.instanceId, extensionInstanceId)).run()
-
-  return { customHostname, dnsConfigured }
 }
 
 /**
