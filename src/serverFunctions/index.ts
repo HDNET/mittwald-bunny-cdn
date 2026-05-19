@@ -9,6 +9,7 @@ export {
   addCustomHostnameFn,
   createPullZoneFn,
   deletePullZoneFn,
+  detachPullZoneFn,
   getPullZoneStatusFn,
   purgeCacheFn,
   removeCustomHostnameFn,

@@ -25,9 +25,10 @@ interface Props {
   onPatched: () => void
   onError: (message: string) => void
   onDelete: () => Promise<void>
+  onDetach: () => Promise<void>
 }
 
-export function AccountTab({ onPatched, onError, onDelete }: Props) {
+export function AccountTab({ onPatched, onError, onDelete, onDetach }: Props) {
   const { t } = useTranslation()
   const apiKeyStatus = BunnyCdnGhost.getApiKeyStatus().use()
 
@@ -63,14 +64,24 @@ export function AccountTab({ onPatched, onError, onDelete }: Props) {
   }
 
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [deleting, setDeleting] = useState(false)
+  const [busy, setBusy] = useState<'delete' | 'detach' | null>(null)
 
   async function handleDelete() {
-    setDeleting(true)
+    setBusy('delete')
     try {
       await onDelete()
     } finally {
-      setDeleting(false)
+      setBusy(null)
+      setConfirmDelete(false)
+    }
+  }
+
+  async function handleDetach() {
+    setBusy('detach')
+    try {
+      await onDetach()
+    } finally {
+      setBusy(null)
       setConfirmDelete(false)
     }
   }
@@ -133,16 +144,31 @@ export function AccountTab({ onPatched, onError, onDelete }: Props) {
             </Button>
           </Flex>
         ) : (
-          <Flex direction="column" gap="s">
-            <Alert status="danger" role="alert">
-              <AlertText>{t('dashboard.dangerZone.confirmWarning')}</AlertText>
-            </Alert>
-            <ActionGroup>
-              {/* @ts-expect-error — flow remote typing */}
-              <Button variant="danger" onPress={handleDelete} isDisabled={deleting}>
-                {deleting ? t('dashboard.dangerZone.deleting') : t('dashboard.dangerZone.deleteFinal')}
+          <Flex direction="column" gap="m">
+            <Heading>{t('dashboard.dangerZone.confirmChoice')}</Heading>
+
+            <Flex direction="column" gap="s">
+              <Text>{t('dashboard.dangerZone.detachHint')}</Text>
+              <Button variant="soft" color="secondary" onPress={handleDetach} isDisabled={busy !== null}>
+                {busy === 'detach' ? t('dashboard.dangerZone.detaching') : t('dashboard.dangerZone.detachFinal')}
               </Button>
-              <Button variant="soft" color="secondary" onPress={() => setConfirmDelete(false)}>
+            </Flex>
+
+            <Flex direction="column" gap="s">
+              <Text>{t('dashboard.dangerZone.deleteHint')}</Text>
+              {/* @ts-expect-error — flow remote typing */}
+              <Button variant="danger" onPress={handleDelete} isDisabled={busy !== null}>
+                {busy === 'delete' ? t('dashboard.dangerZone.deleting') : t('dashboard.dangerZone.deleteFinal')}
+              </Button>
+            </Flex>
+
+            <ActionGroup>
+              <Button
+                variant="soft"
+                color="secondary"
+                onPress={() => setConfirmDelete(false)}
+                isDisabled={busy !== null}
+              >
                 {t('common.actions.cancel')}
               </Button>
             </ActionGroup>

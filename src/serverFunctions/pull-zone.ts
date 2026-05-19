@@ -5,6 +5,7 @@ import {
   addCustomHostname as addCustomHostnameDomain,
   createPullZone as createPullZoneDomain,
   type DnsClient,
+  detachPullZone as detachPullZoneDomain,
   removeCustomHostname as removeCustomHostnameDomain,
   unconfigureDnsCname,
 } from '~/domain/pull-zone'
@@ -214,6 +215,22 @@ export const deletePullZoneFn = createServerFn({ method: 'POST' })
       return { success: true }
     },
   )
+
+/**
+ * Drops the pull-zone link from the extension without touching bunny.net:
+ * the bunny zone, its hostnames, and the mittwald CNAME stay in place.
+ * Use case: user wants to uninstall the extension but keep managing the
+ * pull zone directly via the bunny.net dashboard.
+ */
+export const detachPullZoneFn = createServerFn({ method: 'POST' })
+  .middleware([authMiddlewareWithAccessToken])
+  .handler(async ({ context }: { context: { extensionInstanceId: string } }) => {
+    const db = getDb()
+    requireEnabled(db, context.extensionInstanceId)
+    const { pullZoneId } = detachPullZoneDomain(db, context.extensionInstanceId)
+    invalidateCached(pullZoneId)
+    return { success: true }
+  })
 
 export const getPullZoneStatusFn = createServerFn({ method: 'GET' })
   .middleware([authMiddleware])

@@ -393,11 +393,15 @@
     },
     "dangerZone": {
       "label": "Remove CDN setup",
-      "description": "The pull zone, DNS record (CNAME), and all CDN settings will be removed irreversibly. Your domain will point directly to the mittwald server again.",
+      "description": "'Delete permanently' removes the pull zone, DNS record, and all extension data irreversibly. 'Detach' keeps the pull zone at bunny.net so you can keep managing it from the bunny.net dashboard.",
       "deleteCta": "Remove CDN setup",
-      "confirmWarning": "Are you sure? The pull zone at bunny.net and the DNS record at mittwald will be deleted. This action cannot be undone.",
+      "confirmChoice": "How would you like to proceed?",
+      "deleteFinal": "Delete permanently",
+      "deleteHint": "Deletes the pull zone at bunny.net, removes the DNS record (CNAME), and all extension data. Cannot be undone.",
       "deleting": "Deleting…",
-      "deleteFinal": "Delete permanently"
+      "detachFinal": "Detach",
+      "detachHint": "Leaves the pull zone at bunny.net intact — you keep managing it via the bunny.net dashboard. The DNS record remains in place for now.",
+      "detaching": "Detaching…"
     },
     "integrationTab": {
       "heading": "Integration",
