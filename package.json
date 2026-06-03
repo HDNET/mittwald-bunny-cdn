@@ -88,7 +88,7 @@
     "react-error-boundary": "^6.1.2",
     "react-hook-form": "^7.76.1",
     "react-i18next": "^17.0.8",
-    "react-is": "^19.2.6"
+    "react-is": "^19.2.7"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.15",
