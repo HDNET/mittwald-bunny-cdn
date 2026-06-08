@@ -34,7 +34,7 @@ export interface PullZoneInfo {
   enableGeoZoneASIA: boolean
   enableGeoZoneSA: boolean
   enableGeoZoneAF: boolean
-  hostnames: Array<{ value: string; hasCertificate: boolean }>
+  hostnames: Array<{ value: string; hasCertificate: boolean; forceSsl: boolean }>
   optimizer: {
     image: boolean
     webp: boolean
@@ -299,7 +299,7 @@ export async function deletePullZone(pullZoneId: number, apiKey: string): Promis
 interface BunnyPullZoneRaw {
   Id: number
   Name: string
-  Hostnames: Array<{ Value: string; HasCertificate?: boolean }>
+  Hostnames: Array<{ Value: string; HasCertificate?: boolean; ForceSSL?: boolean }>
   OriginUrl: string
   Enabled: boolean
   EnableGeoZoneEU: boolean
@@ -335,6 +335,7 @@ function mapPullZone(data: BunnyPullZoneRaw): PullZoneInfo {
     hostnames: (data.Hostnames ?? []).map((h) => ({
       value: h.Value,
       hasCertificate: h.HasCertificate ?? false,
+      forceSsl: h.ForceSSL ?? false,
     })),
     optimizer: {
       image: data.EnableImageOptimizer ?? false,
@@ -456,10 +457,78 @@ export async function removeHostname(pullZoneId: number, hostname: string, apiKe
   }
 }
 
+/**
+ * Requests a free Let's Encrypt certificate for a custom hostname.
+ *
+ * Non-fatal by design: Bunny can only issue the cert once the hostname's DNS
+ * already points at the pull zone, which for full-site is set by the customer
+ * *after* creation. A premature call (or any transient error) is logged and
+ * swallowed — {@link ensureCustomHostnameSsl} retries on every status load
+ * until the cert appears, so failure here never aborts zone creation.
+ */
 export async function enableFreeSsl(pullZoneId: number, hostname: string, apiKey: string): Promise<void> {
   log.info(`Enabling free SSL for "${hostname}" on pull zone ${pullZoneId}`)
 
-  await bunnyFetch(`/pullzone/loadFreeCertificate?hostname=${encodeURIComponent(hostname)}`, apiKey)
+  const response = await bunnyFetch(`/pullzone/loadFreeCertificate?hostname=${encodeURIComponent(hostname)}`, apiKey)
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    log.warn(
+      `Free SSL request for "${hostname}" returned HTTP ${response.status} (non-fatal, will retry on status load): ${body}`,
+    )
+  }
+}
+
+/**
+ * Toggles "Force SSL" (redirect HTTP → HTTPS) for a single hostname. Only safe
+ * to enable once the hostname actually has a certificate, otherwise visitors
+ * get redirected to a broken TLS endpoint.
+ */
+export async function setForceSsl(
+  pullZoneId: number,
+  hostname: string,
+  forceSsl: boolean,
+  apiKey: string,
+): Promise<void> {
+  await bunnyRequest(`/pullzone/${pullZoneId}/setForceSSL`, apiKey, {
+    method: 'POST',
+    body: JSON.stringify({ Hostname: hostname, ForceSSL: forceSsl }),
+  })
+}
+
+/**
+ * Best-effort SSL reconciliation for a pull zone's custom hostname, run on
+ * every status load. Resolves the full-site chicken-and-egg problem: at
+ * creation time the customer's CNAME isn't set yet, so the cert can't be
+ * issued. Here we re-check on each load and:
+ *  1. trigger the free certificate once DNS points at the zone, then
+ *  2. enable Force SSL once the certificate is actually present.
+ * Both steps are idempotent and fully non-fatal — a failure never breaks the
+ * status response.
+ */
+export async function ensureCustomHostnameSsl(
+  pullZoneId: number,
+  hostnames: Array<{ value: string; hasCertificate: boolean; forceSsl: boolean }>,
+  dnsOk: boolean,
+  apiKey: string,
+): Promise<void> {
+  const custom = hostnames.find((h) => !h.value.endsWith('.b-cdn.net'))
+  if (!custom) return
+
+  if (!custom.hasCertificate) {
+    // No cert yet — only worth triggering once DNS actually resolves to the zone.
+    if (dnsOk) await enableFreeSsl(pullZoneId, custom.value, apiKey)
+    return
+  }
+
+  // Cert is live but HTTP isn't forced to HTTPS yet — enable it once.
+  if (!custom.forceSsl) {
+    try {
+      await setForceSsl(pullZoneId, custom.value, true, apiKey)
+      log.info(`Enabled Force SSL for "${custom.value}" on pull zone ${pullZoneId}`)
+    } catch (err) {
+      log.warn(`Force SSL enable for "${custom.value}" failed (non-fatal):`, err instanceof Error ? err.message : err)
+    }
+  }
 }
 
 /**
