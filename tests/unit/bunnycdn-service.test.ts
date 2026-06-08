@@ -6,8 +6,10 @@ import {
   createTypo3CookieEdgeRule,
   deletePullZone,
   enableFreeSsl,
+  ensureCustomHostnameSsl,
   getPullZone,
   purgeCache,
+  setForceSsl,
   setupFullSiteCdn,
   validateApiKey,
 } from '~/server/bunnycdn.js'
@@ -231,6 +233,71 @@ describe('enableFreeSsl', () => {
         headers: expect.objectContaining({ AccessKey: 'key' }),
       }),
     )
+  })
+
+  it('swallows a non-2xx response (DNS not ready yet) without throwing', async () => {
+    mockFetch.mockResolvedValue(new Response('certificate validation failed', { status: 400 }))
+
+    await expect(enableFreeSsl(42, 'www.example.com', 'key')).resolves.toBeUndefined()
+  })
+})
+
+describe('setForceSsl', () => {
+  it('POSTs Hostname + ForceSSL to setForceSSL', async () => {
+    mockFetch.mockResolvedValue(new Response('', { status: 200 }))
+
+    await setForceSsl(42, 'www.example.com', true, 'key')
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://api.bunny.net/pullzone/42/setForceSSL',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ Hostname: 'www.example.com', ForceSSL: true }),
+      }),
+    )
+  })
+})
+
+describe('ensureCustomHostnameSsl', () => {
+  const hostnames = (over: Partial<{ hasCertificate: boolean; forceSsl: boolean }> = {}) => [
+    { value: 'zone.b-cdn.net', hasCertificate: true, forceSsl: false },
+    { value: 'www.example.com', hasCertificate: false, forceSsl: false, ...over },
+  ]
+
+  it('triggers the free certificate once DNS resolves and no cert exists', async () => {
+    mockFetch.mockResolvedValue(new Response('', { status: 200 }))
+
+    await ensureCustomHostnameSsl(42, hostnames(), true, 'key')
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch.mock.calls[0][0]).toContain('loadFreeCertificate?hostname=www.example.com')
+  })
+
+  it('does nothing while DNS is not yet pointed at the zone', async () => {
+    await ensureCustomHostnameSsl(42, hostnames(), false, 'key')
+
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('enables Force SSL once the certificate is present', async () => {
+    mockFetch.mockResolvedValue(new Response('', { status: 200 }))
+
+    await ensureCustomHostnameSsl(42, hostnames({ hasCertificate: true, forceSsl: false }), true, 'key')
+
+    expect(mockFetch).toHaveBeenCalledTimes(1)
+    expect(mockFetch.mock.calls[0][0]).toContain('/pullzone/42/setForceSSL')
+  })
+
+  it('is a no-op when cert exists and Force SSL is already on', async () => {
+    await ensureCustomHostnameSsl(42, hostnames({ hasCertificate: true, forceSsl: true }), true, 'key')
+
+    expect(mockFetch).not.toHaveBeenCalled()
+  })
+
+  it('does nothing when there is no custom hostname', async () => {
+    await ensureCustomHostnameSsl(42, [{ value: 'zone.b-cdn.net', hasCertificate: true, forceSsl: false }], true, 'key')
+
+    expect(mockFetch).not.toHaveBeenCalled()
   })
 })
 

@@ -262,6 +262,14 @@ export const getPullZoneStatusFn = createServerFn({ method: 'GET' })
           bunny.pingOrigin(pullZone.originUrl),
         ])
 
+        // Reconcile SSL for the custom hostname: full-site DNS is only set by
+        // the customer after creation, so the cert can't be issued up front.
+        // Best-effort and non-fatal — the freshly-issued cert surfaces on the
+        // next status load.
+        await bunny
+          .ensureCustomHostnameSsl(pullZone.id, remote.hostnames, dnsOk, apiKey)
+          .catch((err) => log.warn('[api] SSL reconcile failed (non-fatal):', err instanceof Error ? err.message : err))
+
         return {
           exists: true,
           extensionEnabled,
