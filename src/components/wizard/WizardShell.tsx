@@ -100,7 +100,7 @@ export function WizardShell({ initialStep, onComplete }: Props) {
           cdnDomain: result.cdnDomain,
           originUrl: result.originUrl,
           cdnMode,
-          hostname: selectedDomain.hostname,
+          hostname: getCdnHostname() ?? selectedDomain.hostname,
           dnsConfigured: result.dnsConfigured,
           customHostname: result.customHostname,
         }),
