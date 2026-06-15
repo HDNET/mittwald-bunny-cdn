@@ -80,7 +80,7 @@
     "@weissaufschwarz/mitthooks": "0.3.0",
     "better-sqlite3": "^12.11.1",
     "drizzle-orm": "^0.45.2",
-    "envalid": "^8.1.1",
+    "envalid": "^8.2.0",
     "i18next": "^26.3.1",
     "nitro": "^3.0.260429-beta",
     "react": "^19.2.7",
