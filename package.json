@@ -91,7 +91,7 @@
     "react-is": "^19.2.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.4.16",
+    "@biomejs/biome": "^2.5.0",
     "@commitlint/cli": "^21.0.2",
     "@hdnet/commitlint-config": "^1.0.2",
     "@tanstack/router-cli": "^1.167.17",
