@@ -103,7 +103,7 @@
     "@vitest/coverage-v8": "^4.1.10",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.10",
-    "fast-check": "^4.8.0",
+    "fast-check": "^4.9.0",
     "husky": "^9.1.7",
     "patch-package": "^8.0.1",
     "typescript": "^6.0.3",
