@@ -91,8 +91,8 @@
     "react-is": "^19.2.7"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.2",
-    "@commitlint/cli": "^21.2.0",
+    "@biomejs/biome": "^2.5.3",
+    "@commitlint/cli": "^21.2.1",
     "@hdnet/commitlint-config": "^1.0.2",
     "@tanstack/router-cli": "^1.167.18",
     "@types/better-sqlite3": "^7.6.13",
