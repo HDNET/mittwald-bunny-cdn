@@ -83,7 +83,7 @@
     "envalid": "^8.2.0",
     "i18next": "^26.3.6",
     "nitro": "^3.0.260429-beta",
-    "react": "^19.2.7",
+    "react": "^19.2.8",
     "react-dom": "^19.2.7",
     "react-error-boundary": "^6.1.2",
     "react-hook-form": "^7.83.0",
