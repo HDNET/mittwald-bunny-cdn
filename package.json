@@ -78,7 +78,7 @@
     "@tanstack/router-plugin": "^1.139.0",
     "@tanstack/start-client-core": "^1.167.17",
     "@weissaufschwarz/mitthooks": "0.3.0",
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.2",
     "drizzle-orm": "^0.45.2",
     "envalid": "^8.2.0",
     "i18next": "^26.3.6",
