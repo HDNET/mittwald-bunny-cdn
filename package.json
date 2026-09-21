@@ -96,7 +96,7 @@
     "@hdnet/commitlint-config": "^1.0.2",
     "@tanstack/router-cli": "^1.167.38",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.6.1",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.1",
