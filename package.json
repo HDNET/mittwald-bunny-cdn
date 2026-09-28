@@ -85,7 +85,7 @@
     "nitro": "^3.0.260429-beta",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-error-boundary": "^6.1.5",
+    "react-error-boundary": "^6.1.6",
     "react-hook-form": "^7.88.0",
     "react-i18next": "^17.0.14",
     "react-is": "^19.3.0"
