@@ -87,7 +87,7 @@
     "react-dom": "^19.3.1",
     "react-error-boundary": "^6.1.6",
     "react-hook-form": "^7.90.0",
-    "react-i18next": "^17.0.15",
+    "react-i18next": "^17.1.9",
     "react-is": "^19.3.1"
   },
   "devDependencies": {
