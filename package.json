@@ -72,7 +72,7 @@
     "@mittwald/mstudio-ext-react-components": "^0.2.0-alpha.812",
     "@mittwald/react-ghostmaker": "^1.5.4",
     "@tanstack/nitro-v2-vite-plugin": "^1.155.2",
-    "@tanstack/react-query": "^5.104.5",
+    "@tanstack/react-query": "^5.105.0",
     "@tanstack/react-router": "^1.170.46",
     "@tanstack/react-start": "^1.169.4",
     "@tanstack/router-plugin": "^1.139.0",
