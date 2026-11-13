@@ -1,6 +1,6 @@
 name: Feature-Vorschlag
 description: Eine Idee, was die Extension besser machen könnte
-labels: ['enhancement']
+labels: ["enhancement"]
 body:
   - type: textarea
     id: problem

@@ -12,7 +12,6 @@ zusätzlich ein archivierungs-getaggtes Image in GHCR ohne Deploy.
 Das Environment entkoppelt Deploy-Secrets vom Rest des Repos: PR-Checks
 kommen an sie nicht heran, nur Jobs mit `environment: production` tun
 das. Im selben Dialog optional konfigurieren:
-
 - **Required reviewers** — ein manuelles Go/No-Go vor jedem Deploy.
 - **Wait timer** — x Minuten Delay zwischen CI-grün und Rollout.
 - **Deployment branches and tags** — hart auf `main` beschränken, falls
@@ -28,22 +27,22 @@ Fork-PRs sie nie zu sehen.
 
 > Settings → Environments → production → **Variables**
 
-| Name | Beispielwert | Zweck |
-|---|---|---|
-| `DEPLOYMENT_URL` | `https://bunnycdn.hdnet.de` | Öffentliche URL; wird nur im Environment-UI als Link angezeigt |
-| `STACK_ID` | `abc123def456…` | mStudio-Stack, in den deployt wird (`mittwald stack list` oder mStudio-UI) |
-| `EXTENSION_ID` | `7f3a4b2c-…` | Contribution-ID der Extension (aus der mittwald-Publisher-UI). Nicht sensibel — wandert in Webhook-Payloads — aber semantisch Deploy-gebunden |
+| Name             | Beispielwert                | Zweck                                                                                                                                         |
+| ---------------- | --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEPLOYMENT_URL` | `https://bunnycdn.hdnet.de` | Öffentliche URL; wird nur im Environment-UI als Link angezeigt                                                                                |
+| `STACK_ID`       | `abc123def456…`             | mStudio-Stack, in den deployt wird (`mittwald stack list` oder mStudio-UI)                                                                    |
+| `EXTENSION_ID`   | `7f3a4b2c-…`                | Contribution-ID der Extension (aus der mittwald-Publisher-UI). Nicht sensibel — wandert in Webhook-Payloads — aber semantisch Deploy-gebunden |
 
 ### Environment Secrets
 
 > Settings → Environments → production → **Secrets**
 
-| Name | Quelle / Erzeugen mit | Zweck |
-|---|---|---|
-| `MITTWALD_API_TOKEN` | mStudio → Profil → API-Token | mStudio-API-Auth für den Deploy-Call |
-| `EXTENSION_SECRET` | mittwald-Publisher-UI | Webhook-Signature-Verification (see `src/server/webhooks/signature.ts`) |
-| `ENCRYPTION_MASTER_PASSWORD` | `node scripts/generate-encryption-secrets.js` | scrypt-Master für AES-256-GCM der bunny.net-API-Keys |
-| `ENCRYPTION_SALT` | selber Generator wie oben | Salt für die scrypt-Derivation |
+| Name                         | Quelle / Erzeugen mit                         | Zweck                                                                   |
+| ---------------------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
+| `MITTWALD_API_TOKEN`         | mStudio → Profil → API-Token                  | mStudio-API-Auth für den Deploy-Call                                    |
+| `EXTENSION_SECRET`           | mittwald-Publisher-UI                         | Webhook-Signature-Verification (see `src/server/webhooks/signature.ts`) |
+| `ENCRYPTION_MASTER_PASSWORD` | `node scripts/generate-encryption-secrets.js` | scrypt-Master für AES-256-GCM der bunny.net-API-Keys                    |
+| `ENCRYPTION_SALT`            | selber Generator wie oben                     | Salt für die scrypt-Derivation                                          |
 
 `GITHUB_TOKEN` kommt automatisch von GitHub — nichts zu tun.
 

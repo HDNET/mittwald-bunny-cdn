@@ -1,6 +1,6 @@
 name: Bug Report
 description: Etwas funktioniert nicht wie erwartet
-labels: ['bug']
+labels: ["bug"]
 body:
   - type: markdown
     attributes:
@@ -29,7 +29,7 @@ body:
     attributes:
       label: Extension-Version
       description: Steht im "Über"-Tab der Extension oder im package.json
-      placeholder: '0.1.0'
+      placeholder: "0.1.0"
   - type: dropdown
     id: cdn-mode
     attributes:

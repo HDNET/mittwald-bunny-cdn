@@ -7,7 +7,7 @@ on:
     branches: [main]
   schedule:
     # Re-scan main weekly so newly-disclosed CodeQL rules catch dormant issues.
-    - cron: '23 5 * * 1'
+    - cron: "23 5 * * 1"
 
 permissions:
   contents: read
@@ -38,4 +38,4 @@ jobs:
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4.39.3
         with:
-          category: '/language:${{ matrix.language }}'
+          category: "/language:${{ matrix.language }}"

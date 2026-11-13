@@ -6,7 +6,7 @@ on:
     # Tag pushes (e.g. v1.2.3) build and archive a versioned image to
     # the registry for rollback/audit. The actual mStudio deploy only
     # fires for main-branch pushes — see `deploy.if` below.
-    tags: ['v*']
+    tags: ["v*"]
   workflow_dispatch:
 
 concurrency:

@@ -3,7 +3,6 @@
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability, please report it responsibly:
-
 - **Email:** hosting@hdnet.de
 - **Do not** open a public GitHub issue for security vulnerabilities
 
@@ -21,12 +20,12 @@ We will acknowledge your report within 48 hours and provide a fix timeline.
 
 ## Data Storage
 
-| Data | Storage | At-rest protection |
-|------|---------|-------------------|
-| bunny.net API key | SQLite (`extension_instances.encrypted_api_key`) | AES-256-GCM (scrypt-derived key) |
-| Pull-zone metadata | SQLite (`pull_zones`) | Plaintext (non-sensitive: hostnames, mode, custom hostname) |
-| Webhook request IDs | SQLite (`processed_webhook_requests`) | Plaintext (opaque UUIDs, 30-day retention) |
-| Session tokens | In-memory only, per request | Verified as JWT via `@mittwald/ext-bridge`, never persisted |
+| Data                | Storage                                          | At-rest protection                                          |
+| ------------------- | ------------------------------------------------ | ----------------------------------------------------------- |
+| bunny.net API key   | SQLite (`extension_instances.encrypted_api_key`) | AES-256-GCM (scrypt-derived key)                            |
+| Pull-zone metadata  | SQLite (`pull_zones`)                            | Plaintext (non-sensitive: hostnames, mode, custom hostname) |
+| Webhook request IDs | SQLite (`processed_webhook_requests`)            | Plaintext (opaque UUIDs, 30-day retention)                  |
+| Session tokens      | In-memory only, per request                      | Verified as JWT via `@mittwald/ext-bridge`, never persisted |
 
 The per-instance secret that mittwald delivers in `ExtensionAddedToContext` and `SecretRotated` webhooks is intentionally **not persisted**: webhook signature verification uses the marketplace Ed25519 public-key path (`@weissaufschwarz/mitthooks`), so the per-instance secret is unused. `handleSecretRotated` therefore acknowledges the webhook without writing.
 

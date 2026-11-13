@@ -1,9 +1,9 @@
 services:
   app:
-    image: '{{ .Env.IMAGE_TAG }}'
-    description: 'bunny.net Extension'
+    image: "{{ .Env.IMAGE_TAG }}"
+    description: "bunny.net Extension"
     ports:
-      - '3000/tcp'
+      - "3000/tcp"
     volumes:
       - app-data:/app/data
     # Single replica is load-bearing, not a cost choice: SQLite is a
@@ -18,13 +18,13 @@ services:
       replicas: 1
       resources:
         limits:
-          cpus: '1.0'
+          cpus: "1.0"
           memory: 512m
         reservations:
-          cpus: '0.25'
+          cpus: "0.25"
           memory: 256m
     healthcheck:
-      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
       interval: 30s
       timeout: 5s
       # 30s buffer absorbs: cold container start + first SQLite migration
@@ -34,10 +34,10 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: /app/data/sqlite.db
-      EXTENSION_ID: '{{ .Env.EXTENSION_ID }}'
-      EXTENSION_SECRET: '{{ .Env.EXTENSION_SECRET }}'
-      ENCRYPTION_MASTER_PASSWORD: '{{ .Env.ENCRYPTION_MASTER_PASSWORD }}'
-      ENCRYPTION_SALT: '{{ .Env.ENCRYPTION_SALT }}'
+      EXTENSION_ID: "{{ .Env.EXTENSION_ID }}"
+      EXTENSION_SECRET: "{{ .Env.EXTENSION_SECRET }}"
+      ENCRYPTION_MASTER_PASSWORD: "{{ .Env.ENCRYPTION_MASTER_PASSWORD }}"
+      ENCRYPTION_SALT: "{{ .Env.ENCRYPTION_SALT }}"
 
 volumes:
   app-data: {}

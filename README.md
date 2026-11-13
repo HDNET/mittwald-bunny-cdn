@@ -30,12 +30,12 @@ Features: Setup wizard with DNS/TypoScript configuration hints, encrypted API ke
 
 ### Data residency at a glance
 
-| Where | What |
-|---|---|
-| bunny.net API | SI (Slovenia), EU |
-| Edge-PoPs | configurable — "EU-only" toggle restricts to EU geo-zones |
-| mittwald origin | DE (Germany) |
-| Extension backend | wherever you deploy it (SQLite + Nitro) |
+| Where             | What                                                      |
+| ----------------- | --------------------------------------------------------- |
+| bunny.net API     | SI (Slovenia), EU                                         |
+| Edge-PoPs         | configurable — "EU-only" toggle restricts to EU geo-zones |
+| mittwald origin   | DE (Germany)                                              |
+| Extension backend | wherever you deploy it (SQLite + Nitro)                   |
 
 ### mittwald Extension Resources
 
@@ -70,14 +70,14 @@ node scripts/generate-encryption-secrets.js  # generates ENCRYPTION_MASTER_PASSW
 
 Fill in `EXTENSION_ID` and `EXTENSION_SECRET` from your mittwald extension registration.
 
-| Variable | Required | Description |
-|:---|:---|:---|
-| `EXTENSION_ID` | yes | mittwald Extension ID |
-| `EXTENSION_SECRET` | yes | mittwald Extension Secret |
-| `ENCRYPTION_MASTER_PASSWORD` | yes | Master password for AES-256-GCM key derivation |
-| `ENCRYPTION_SALT` | yes | Salt for key derivation |
-| `DATABASE_URL` | no | SQLite path (default: `./data/sqlite.db`) |
-| `ZROK_RESERVED_TOKEN` | no | zrok token for local tunnel |
+| Variable                     | Required | Description                                    |
+| :--------------------------- | :------- | :--------------------------------------------- |
+| `EXTENSION_ID`               | yes      | mittwald Extension ID                          |
+| `EXTENSION_SECRET`           | yes      | mittwald Extension Secret                      |
+| `ENCRYPTION_MASTER_PASSWORD` | yes      | Master password for AES-256-GCM key derivation |
+| `ENCRYPTION_SALT`            | yes      | Salt for key derivation                        |
+| `DATABASE_URL`               | no       | SQLite path (default: `./data/sqlite.db`)      |
+| `ZROK_RESERVED_TOKEN`        | no       | zrok token for local tunnel                    |
 
 ### Install Pre-commit Hooks
 
@@ -157,14 +157,14 @@ User → mStudio → Extension Frontend (Flow Remote Components)
 
 ### What's Stored Where
 
-| Data | Location | Encryption | Sensitivity |
-|------|----------|------------|-------------|
-| BunnyCDN API Key | SQLite | AES-256-GCM (scrypt) | 🔴 High |
-| Consented Scopes | SQLite | Plaintext (JSON) | 🟢 Low |
-| Pull Zone metadata | SQLite | Plaintext | 🟢 Low |
-| Webhook request IDs | SQLite | Plaintext (opaque UUIDs, 14d retention) | 🟢 Low |
-| Session tokens | Memory only | JWT (verified, not stored) | 🔴 High |
-| ENCRYPTION_MASTER_PASSWORD | Environment | N/A | 🔴 High |
+| Data                       | Location    | Encryption                              | Sensitivity |
+| -------------------------- | ----------- | --------------------------------------- | ----------- |
+| BunnyCDN API Key           | SQLite      | AES-256-GCM (scrypt)                    | 🔴 High     |
+| Consented Scopes           | SQLite      | Plaintext (JSON)                        | 🟢 Low      |
+| Pull Zone metadata         | SQLite      | Plaintext                               | 🟢 Low      |
+| Webhook request IDs        | SQLite      | Plaintext (opaque UUIDs, 14d retention) | 🟢 Low      |
+| Session tokens             | Memory only | JWT (verified, not stored)              | 🔴 High     |
+| ENCRYPTION_MASTER_PASSWORD | Environment | N/A                                     | 🔴 High     |
 
 > **Note:** The per-instance secret delivered by mittwald webhooks is intentionally **not persisted**. Webhook signature verification uses the marketplace Ed25519 public-key path (`@weissaufschwarz/mitthooks`).
 

@@ -5,7 +5,6 @@ bunny.net ist ein EU-basierter CDN-Anbieter mit Sitz in Slowenien. Das bedeutet:
 ## Wie funktioniert es?
 
 Wir übernehmen für dich:
-
 - Erstellen einer Pull Zone für deine mStudio-Domain bei bunny.net.
 - Konfiguration der DNS-Einträge, damit dein Projekt ohne Downtime sofort über das CDN erreichbar ist.
 - Optionale TYPO3-spezifische Edge Rules, damit eingeloggte Frontend-User den Cache umgehen.

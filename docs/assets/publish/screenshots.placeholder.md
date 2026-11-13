@@ -5,14 +5,14 @@
 
 ## Spec
 
-| Feld | Wert |
-|---|---|
-| **Anzahl** | 3–5 Screenshots |
-| **Formate** | PNG oder JPG |
-| **Größe** | mind. 1280 × 800 px, 16:10- oder 16:9-Verhältnis |
-| **Max. Dateigröße pro Bild** | 2 MB |
-| **Sprache** | Deutsch (primär), englische Variante optional |
-| **mStudio-Feld** | `assets` |
+| Feld                         | Wert                                             |
+| ---------------------------- | ------------------------------------------------ |
+| **Anzahl**                   | 3–5 Screenshots                                  |
+| **Formate**                  | PNG oder JPG                                     |
+| **Größe**                    | mind. 1280 × 800 px, 16:10- oder 16:9-Verhältnis |
+| **Max. Dateigröße pro Bild** | 2 MB                                             |
+| **Sprache**                  | Deutsch (primär), englische Variante optional    |
+| **mStudio-Feld**             | `assets`                                         |
 
 ## Empfohlene Motive
 
