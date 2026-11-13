@@ -4,8 +4,8 @@ WORKDIR /app
 
 # Stage 1: Dependencies
 FROM base AS deps
-COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci
 
 # Stage 2: Build
 FROM base AS builder

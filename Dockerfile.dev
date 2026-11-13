@@ -1,8 +1,8 @@
 FROM node:24.22.3-alpine
 
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps && chown -R node:node /app
+COPY package.json package-lock.json .npmrc ./
+RUN npm ci && chown -R node:node /app
 
 # Run as unprivileged user to avoid host filesystem writes as root
 USER node
