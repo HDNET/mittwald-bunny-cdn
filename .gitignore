@@ -12,3 +12,4 @@ data/*.db-shm
 *.log
 src/routeTree.gen.ts
 .DS_Store
+.idea
