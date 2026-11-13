@@ -1,19 +1,20 @@
-# Stage 1: Dependencies
-FROM node:24.22.2-alpine AS deps
+# Stage 0: Working dir
+FROM node:24.22.3-alpine AS base
 WORKDIR /app
+
+# Stage 1: Dependencies
+FROM base AS deps
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
 
 # Stage 2: Build
-FROM node:24.22.2-alpine AS builder
-WORKDIR /app
+FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build
 
 # Stage 3: Production
-FROM node:24.22.2-alpine AS runner
-WORKDIR /app
+FROM base AS runner
 
 ENV NODE_ENV=production
 ENV PORT=3000
