@@ -37,12 +37,12 @@ Fork-PRs sie nie zu sehen.
 
 > Settings → Environments → production → **Secrets**
 
-| Name                         | Quelle / Erzeugen mit                         | Zweck                                                                   |
-| ---------------------------- | --------------------------------------------- | ----------------------------------------------------------------------- |
-| `MITTWALD_API_TOKEN`         | mStudio → Profil → API-Token                  | mStudio-API-Auth für den Deploy-Call                                    |
-| `EXTENSION_SECRET`           | mittwald-Publisher-UI                         | Webhook-Signature-Verification (see `src/server/webhooks/signature.ts`) |
-| `ENCRYPTION_MASTER_PASSWORD` | `node scripts/generate-encryption-secrets.js` | scrypt-Master für AES-256-GCM der bunny.net-API-Keys                    |
-| `ENCRYPTION_SALT`            | selber Generator wie oben                     | Salt für die scrypt-Derivation                                          |
+| Name                         | Quelle / Erzeugen mit                         | Zweck                                                                  |
+| ---------------------------- | --------------------------------------------- | ---------------------------------------------------------------------- |
+| `MITTWALD_API_TOKEN`         | mStudio → Profil → API-Token                  | mStudio-API-Auth für den Deploy-Call                                   |
+| `EXTENSION_SECRET`           | mittwald-Publisher-UI                         | Session-Token → API-Token (`getAccessToken`, `src/middleware/auth.ts`) |
+| `ENCRYPTION_MASTER_PASSWORD` | `node scripts/generate-encryption-secrets.js` | scrypt-Master für AES-256-GCM der bunny.net-API-Keys                   |
+| `ENCRYPTION_SALT`            | selber Generator wie oben                     | Salt für die scrypt-Derivation                                         |
 
 `GITHUB_TOKEN` kommt automatisch von GitHub — nichts zu tun.
 
@@ -78,10 +78,13 @@ Volume-Sicherung ist der einzige Pfad.
 
 ### `EXTENSION_SECRET`
 
-Bei Rotation im mittwald-Publisher wird parallel ein
-`SecretRotated`-Webhook an den Endpoint geschickt (siehe
-`src/server/webhooks/handler.ts:handleSecretRotated`). Der alte Secret
-bleibt kurz gültig, bis wir den neuen persistiert haben.
+Das Extension-Secret wird im mStudio erzeugt und nur im Deploy-Environment
+hinterlegt. Rotation: neues Secret im mStudio erzeugen, Pipeline-Secret
+überschreiben, neu deployen. Nicht zu verwechseln mit dem Instance-Secret
+(`SecretRotated`-Webhook): das nutzen wir nicht, siehe
+`src/server/webhooks/handler.ts:handleSecretRotated`. Die
+Webhook-Signaturprüfung läuft über die Public Keys der mittwald-API und
+braucht kein Secret.
 
 ### `MITTWALD_API_TOKEN`
 
